@@ -1,6 +1,6 @@
 /* Cahier de formules — fonctionne sans réseau (amphi) */
-const VERSION = 'cahier-3684681714';
-const CORE = ['./', './index.html', './manifest.webmanifest', './icon-180.png', './icon-192.png', './icon-512.png'];
+const VERSION = 'cahier-4f17c80f07';
+const CORE = ['./', './index.html', './firebase.js', './manifest.webmanifest', './icon-180.png', './icon-192.png', './icon-512.png'];
 
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(VERSION).then((c) => c.addAll(CORE)).then(() => self.skipWaiting()));

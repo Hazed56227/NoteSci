@@ -103,6 +103,21 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 2px
 .fedit .fdel { color: var(--danger); }
 .fedit .fok { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
 .side-foot { display: grid; gap: 4px; }
+.acct-line { border: 0; background: transparent; text-align: left; padding: 2px 6px; font-size: 12.5px; color: var(--ink-soft); cursor: pointer; font-weight: 500; }
+.acct-line:hover { color: var(--accent); }
+.acct-line[data-on="1"]::before { content: ""; display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--ok); margin-right: 6px; vertical-align: 1px; }
+.acct .body { display: grid; gap: 12px; align-content: start; }
+.acct label { display: grid; gap: 5px; font-size: 13px; font-weight: 500; color: var(--ink-soft); }
+.acct input, .acct textarea { font: inherit; font-size: 16px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--paper); color: var(--ink); width: 100%; }
+.acct textarea { font-family: var(--mono); font-size: 13px; min-height: 170px; resize: vertical; }
+.acct input:focus, .acct textarea:focus { outline: none; border-color: var(--accent); }
+.acct .btns { display: flex; flex-wrap: wrap; gap: 8px; }
+.acct .primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.acct .msg { min-height: 1.3em; font-size: 14px; color: var(--danger); }
+.acct .msg.ok { color: var(--ok); }
+.acct .who { font-family: var(--serif); font-size: 19px; font-weight: 600; overflow-wrap: anywhere; }
+.acct .link { border: 0; background: none; color: var(--accent); cursor: pointer; padding: 4px 0; font-size: 14px; justify-self: start; }
+.acct ol { margin: 0; padding-left: 1.2em; color: var(--ink-soft); line-height: 1.5; }
 .backup-line { border: 0; background: transparent; text-align: left; padding: 2px 6px; font-size: 12px; color: var(--ink-faint); cursor: pointer; }
 .backup-line:hover { color: var(--accent); }
 .backup-line[data-old="1"] { color: #b86b12; }
@@ -202,9 +217,9 @@ strong { font-weight: 650; }
 
 /* ---------- panneau d'écriture (flottant en haut à droite) ---------- */
 .editor {
-  position: fixed; top: calc(env(safe-area-inset-top, 0px) + 70px); right: 16px; z-index: 25;
-  width: min(500px, calc(100% - 32px)); max-height: calc(100% - 90px); overflow: auto;
-  padding: 8px; border: 1.5px solid var(--accent); border-radius: 14px;
+  position: fixed; top: calc(env(safe-area-inset-top, 0px) + 8px); left: calc(env(safe-area-inset-left, 0px) + 8px); z-index: 40;
+  width: min(450px, calc(100% - 16px)); max-height: calc(100% - 24px); overflow: auto;
+  padding: 7px; border: 1.5px solid var(--accent); border-radius: 14px;
   background: color-mix(in srgb, var(--edit-bg) 94%, transparent);
   -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px);
   box-shadow: var(--shadow); font-family: var(--sans); font-size: 15px; line-height: 1.4;
@@ -218,7 +233,7 @@ strong { font-weight: 650; }
 .row { display: flex; gap: 5px; overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch; padding-bottom: 1px; }
 .row::-webkit-scrollbar { display: none; }
 .k {
-  flex: 0 0 auto; min-width: 42px; height: 42px; padding: 0 9px; border: 1px solid var(--line); border-radius: 8px;
+  flex: 0 0 auto; min-width: 40px; height: 40px; padding: 0 9px; border: 1px solid var(--line); border-radius: 8px;
   background: var(--key); color: var(--key-ink); cursor: pointer; display: inline-flex; align-items: center; justify-content: center;
   font-size: 17px; font-family: var(--serif); touch-action: manipulation; -webkit-user-select: none; user-select: none;
 }
@@ -234,7 +249,7 @@ strong { font-weight: 650; }
   color: var(--ink); font-family: var(--mono); font-size: 16px; line-height: 1.5; padding: 9px 11px; min-height: 44px; max-height: 30vh; overflow: auto;
 }
 .src:focus { outline: none; border-color: var(--accent); }
-.live { padding: 2px 6px; font-family: var(--serif); font-size: 17px; line-height: 1.55; min-height: 1.9em; max-height: 140px; overflow: auto; border-radius: 8px; background: var(--chrome); }
+.live { padding: 2px 6px; font-family: var(--serif); font-size: 17px; line-height: 1.55; min-height: 1.9em; max-height: 120px; overflow: auto; border-radius: 8px; background: var(--chrome); }
 .live .blk:hover { background: none; }
 .live .ln.h1 { font-size: 1.2em; padding: .1em 0; }
 .live .ln.h2 { padding: .1em 0; }
@@ -299,7 +314,6 @@ strong { font-weight: 650; }
   .sheet { padding: 20px 14px 55vh 42px; font-size: 17px; }
   .sheet::before { left: 30px; }
   .top .wide { display: none; }
-  .editor { right: 8px; width: calc(100% - 16px); top: calc(env(safe-area-inset-top, 0px) + 62px); }
   .title-in { font-size: 18px; }
 }
 @media (prefers-reduced-motion: reduce) { .side { transition: none; } }
@@ -333,6 +347,7 @@ strong { font-weight: 650; }
     <ul class="notes" id="notes"></ul>
     <div class="side-foot">
       <div class="save-state" id="saveState" data-s="local"><i></i><span>Sur cet appareil</span></div>
+      <button type="button" class="acct-line" id="acctLine" hidden>Compte : non connecté</button>
       <button type="button" class="backup-line" id="backupLine">Dernière sauvegarde dans Fichiers : jamais</button>
     </div>
   </aside>
@@ -401,6 +416,13 @@ strong { font-weight: 650; }
     <button class="tbtn" id="helpClose" type="button">Fermer</button>
   </header>
   <div class="body" id="helpBody"></div>
+</section>
+<section class="panel acct" id="acct" hidden aria-labelledby="acctTitle">
+  <header>
+    <h2 id="acctTitle">Compte</h2>
+    <button class="tbtn" id="acctClose" type="button">Fermer</button>
+  </header>
+  <div class="body" id="acctBody"></div>
 </section>
 <div class="toast" id="toast" hidden role="status"></div>
 <input type="file" id="importFile" accept=".json,.txt,.md,application/json,text/plain" hidden>
@@ -1703,54 +1725,97 @@ A.connectCloud = function (onMerged) {
   }).catch(function () { ST.coll = null; A.setStatus(); });
 };
 
-function merge(snap) {
-  var remote = {}, remoteSettings = null;
+function merge(snap, opt) {
+  opt = opt || {};
+  var remote = {}, remoteSettings = null, changed = false, changedCur = false;
   snap.docs.forEach(function (d) {
     if (!d.exists) return;
-    if (d.id === 'settings') remoteSettings = d.data(); else remote[d.id] = d.data();
+    var data = d.data();
+    if ((data.updated || 0) > (ST.since || 0)) ST.since = data.updated;
+    if (d.id === 'settings') remoteSettings = data; else remote[d.id] = data;
   });
+  var settingsNewer = remoteSettings && (remoteSettings.updated || 0) > (S.settings.updated || 0);
   if (remoteSettings) {
     var del = S.settings.deleted.slice();
-    (remoteSettings.deleted || []).forEach(function (x) { if (del.indexOf(x) < 0) del.push(x); });
-    if ((remoteSettings.updated || 0) > (S.settings.updated || 0)) {
-      S.settings.custom = remoteSettings.custom || [];
-      if (remoteSettings.folders && remoteSettings.folders.length) S.settings.folders = remoteSettings.folders;
-    }
+    (remoteSettings.deleted || []).forEach(function (x) { if (del.indexOf(x) < 0) { del.push(x); changed = true; } });
     S.settings.deleted = del;
+    if (settingsNewer) {
+      S.settings.custom = remoteSettings.custom || [];
+      S.settings.updated = remoteSettings.updated;
+      changed = true;
+    }
   }
   var dead = {};
   S.settings.deleted.forEach(function (x) { dead[x] = 1; });
+  var editingId = S.edit >= 0 ? S.cur : null;   // la note sous tes doigts n'est jamais remplacée
   var byId = {};
   S.notes.forEach(function (n) { byId[n.id] = n; });
   Object.keys(remote).forEach(function (id) {
     if (dead[id]) { pushDoc(id, null); return; }
     var r = remote[id], l = byId[id];
-    if (!l || ((r.updated || 0) > (l.updated || 0) && !A.touched[id])) {
+    if (!l || ((r.updated || 0) > (l.updated || 0) && id !== editingId)) {
       byId[id] = { id: id, title: r.title || 'Sans titre', body: r.body || '', folder: r.folder || '', created: r.created || 0, updated: r.updated || 0 };
+      changed = true;
+      if (id === S.cur) changedCur = true;
     }
   });
   var out = [];
   Object.keys(byId).forEach(function (id) {
-    if (dead[id]) return;
+    if (dead[id]) { if (id === S.cur) changedCur = true; changed = true; return; }
     var n = byId[id];
     out.push(n);
     var r = remote[id];
     if (n.id !== DEMO_ID || n.updated) {
-      if (!r || (n.updated || 0) > (r.updated || 0)) pushDoc(id, docData(n));
+      if (r ? (n.updated || 0) > (r.updated || 0) : !opt.incremental) pushDoc(id, docData(n));
     }
   });
-  // nouvel appareil : l'exemple non modifié s'efface devant les vraies notes
-  if (out.length > 1) {
-    var demo = out.find(function (n) { return n.id === DEMO_ID; });
-    if (demo && !demo.updated && !remote[DEMO_ID]) out = out.filter(function (n) { return n.id !== DEMO_ID; });
-  }
   S.notes = out.length ? out : S.notes;
+  // dossiers : la liste la plus récente, plus ceux encore utilisés ici
+  if (settingsNewer && remoteSettings.folders && remoteSettings.folders.length) {
+    var used = {};
+    S.notes.forEach(function (n) { used[n.folder] = 1; });
+    var ids = {};
+    remoteSettings.folders.forEach(function (f) { ids[f.id] = 1; });
+    var keep = (S.settings.folders || []).filter(function (f) { return !ids[f.id] && used[f.id]; });
+    S.settings.folders = remoteSettings.folders.map(function (f) {
+      var loc = (S.settings.folders || []).find(function (x) { return x.id === f.id; });
+      return { id: f.id, name: f.name, closed: loc ? loc.closed : f.closed };
+    }).concat(keep);
+  }
   A.ensureFolders();
-  if (!S.notes.some(function (n) { return n.id === S.cur; })) S.cur = S.notes[0] && S.notes[0].id;
-  if ((S.settings.updated || 0) > ((remoteSettings && remoteSettings.updated) || 0)) A.saveSettings();
+  if (!S.notes.some(function (n) { return n.id === S.cur; })) { S.cur = S.notes[0] && S.notes[0].id; changedCur = true; }
+  var localSettingsNewer = remoteSettings ? (S.settings.updated || 0) > (remoteSettings.updated || 0) : !opt.incremental;
+  if (localSettingsNewer) pushDoc('settings', settingsData());
   writeLocal();
+  return { changed: changed, changedCur: changedCur };
 }
 
+/* ---------- synchro avec un compte (version installée) ---------- */
+A.attachRemote = function (coll) { ST.coll = coll; ST.since = 0; ST.pending = {}; A.setStatus(); };
+A.detachRemote = function () { ST.coll = null; ST.pending = {}; A.setStatus(); };
+var syncing = false;
+A.syncNow = function (full, onMerged) {
+  if (!ST.coll || syncing) return Promise.resolve(false);
+  if (navigator.onLine === false) { A.setStatus('offline'); return Promise.resolve(false); }
+  syncing = true;
+  var incremental = !full && ST.since && ST.coll.since;
+  // marge de 5 min : couvre un léger décalage d'horloge entre l'iPad et l'ordi
+  var p = incremental ? ST.coll.since(Math.max(0, ST.since - 300000)) : ST.coll.get();
+  return withTimeout(p, 15000).then(function (snap) {
+    var res = merge(snap, { incremental: !!incremental });
+    ST.lastSync = A.now();
+    syncing = false;
+    A.flushPending();
+    A.setStatus();
+    if (onMerged) onMerged(res);
+    return true;
+  }, function (e) {
+    syncing = false;
+    A.setStatus('offline');
+    if (A.onSyncError) A.onSyncError(e);
+    return false;
+  });
+};
 })(APP);
 
 /* Cahier de Formules — éditeur */
@@ -1892,6 +1957,17 @@ A.openNote = function (id) {
   window.scrollTo(0, 0);
 };
 
+/* après une synchro : met à jour la note affichée sans bouger la page */
+A.refreshCurrent = function () {
+  if (S.edit >= 0) return;
+  var n = curNote();
+  if (!n) { if (S.notes[0]) A.openNote(S.notes[0].id); return; }
+  if (document.activeElement !== titleIn) titleIn.value = n.title || '';
+  S.lines = (n.body || '').split('\n');
+  if (S.mode === 'source') { if (document.activeElement !== srcAll) { srcAll.value = n.body || ''; autoGrowAll(); } return; }
+  renderDoc();
+};
+
 function touch() {
   var n = curNote();
   if (!n) return;
@@ -2007,8 +2083,8 @@ function visibleBand() {
   var top = document.querySelector('.top').getBoundingClientRect().bottom + 8;
   var er = editor.getBoundingClientRect();
   var sr = $('sheet').getBoundingClientRect();
-  // si le panneau couvre presque toute la largeur de la feuille, la ligne doit passer dessous
-  if (!editor.hidden && er.left < sr.left + sr.width * 0.35) top = er.bottom + 10;
+  // si le panneau déborde sur la colonne de texte, la ligne en cours passe dessous
+  if (!editor.hidden && er.right > sr.left + 56) top = Math.max(top, er.bottom + 12);
   return { top: top, bottom: h - 16 };
 }
 function reveal() {
@@ -2611,6 +2687,217 @@ function boot() {
   }
 }
 
+if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot); else boot();
+})(APP);
+</script>
+<script>/* Cahier de Formules — compte et synchronisation iPad ⇄ ordi (Firebase) */
+(function (A) {
+'use strict';
+var S = A.state;
+var $ = function (id) { return document.getElementById(id); };
+var CFG_KEY = 'cahier-fb-config';
+var fb = null, user = null, sdkError = false, busy = false;
+
+function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+function readCfg() { try { return JSON.parse(localStorage.getItem(CFG_KEY) || 'null'); } catch (e) { return null; } }
+function writeCfg(c) { try { if (c) localStorage.setItem(CFG_KEY, JSON.stringify(c)); else localStorage.removeItem(CFG_KEY); return true; } catch (e) { return false; } }
+
+/* accepte le bloc copié depuis la console Firebase (const firebaseConfig = {...}) ou du JSON */
+function parseCfg(text) {
+  var o = {};
+  ['apiKey', 'authDomain', 'projectId', 'storageBucket', 'messagingSenderId', 'appId'].forEach(function (k) {
+    var m = new RegExp('["\']?' + k + '["\']?\\s*:\\s*["\']([^"\']+)["\']').exec(text);
+    if (m) o[k] = m[1].trim();
+  });
+  return o.apiKey && o.projectId && o.appId ? o : null;
+}
+
+function errText(e) {
+  var c = (e && e.code) || '';
+  var map = {
+    'auth/invalid-email': 'Adresse e-mail invalide.',
+    'auth/missing-email': 'Indique ton adresse e-mail.',
+    'auth/missing-password': 'Indique ton mot de passe.',
+    'auth/weak-password': 'Mot de passe trop court : 6 caractères minimum.',
+    'auth/email-already-in-use': 'Un compte existe déjà avec cette adresse : touche « Se connecter ».',
+    'auth/invalid-credential': 'E-mail ou mot de passe incorrect.',
+    'auth/invalid-login-credentials': 'E-mail ou mot de passe incorrect.',
+    'auth/wrong-password': 'E-mail ou mot de passe incorrect.',
+    'auth/user-not-found': 'Aucun compte avec cette adresse : touche « Créer mon compte ».',
+    'auth/network-request-failed': 'Pas de connexion internet. Réessaie quand tu as du réseau.',
+    'auth/too-many-requests': 'Trop d’essais. Attends quelques minutes puis réessaie.',
+    'auth/operation-not-allowed': 'Dans Firebase, active « E-mail/Mot de passe » (Authentication → Sign-in method).',
+    'auth/configuration-not-found': 'Dans Firebase, ouvre Authentication et touche « Commencer », puis active « E-mail/Mot de passe ».',
+    'auth/unauthorized-domain': 'Dans Firebase : Authentication → Settings → Domaines autorisés → ajoute ' + location.hostname + '.',
+    'auth/api-key-not-valid.-please-pass-a-valid-api-key.': 'La configuration collée est incorrecte : recopie le bloc firebaseConfig.',
+    'auth/invalid-api-key': 'La configuration collée est incorrecte : recopie le bloc firebaseConfig.',
+    'permission-denied': 'Firebase refuse l’accès aux notes : publie les règles Firestore (étape 4 du mode d’emploi).',
+    'unavailable': 'Serveur injoignable pour l’instant. Tes notes restent sur cet appareil.',
+    'timeout': 'Le serveur ne répond pas. Tes notes restent sur cet appareil.'
+  };
+  return map[c] || ('Erreur : ' + (c || (e && e.message) || 'inconnue'));
+}
+
+function loadSdk() {
+  return new Promise(function (res, rej) {
+    if (window.FB) { res(); return; }
+    var s = document.createElement('script');
+    s.src = 'firebase.js';
+    s.onload = function () { window.FB ? res() : rej(new Error('sdk')); };
+    s.onerror = function () { rej(new Error('sdk')); };
+    document.head.appendChild(s);
+  });
+}
+
+/* même interface que le stockage Claude : get / since / doc().set / doc().delete */
+function makeColl(db, uid) {
+  var base = FB.collection(db, 'users', uid, 'items');
+  function snap(qs) { return { docs: qs.docs.map(function (d) { return { id: d.id, exists: true, data: function () { return d.data(); } }; }) }; }
+  return {
+    get: function () { return FB.getDocs(base).then(snap); },
+    since: function (ts) { return FB.getDocs(FB.query(base, FB.where('updated', '>', ts))).then(snap); },
+    doc: function (id) {
+      var ref = FB.doc(base, id);
+      return { set: function (d) { return FB.setDoc(ref, d); }, delete: function () { return FB.deleteDoc(ref); } };
+    }
+  };
+}
+
+function afterSync(res) {
+  if (res && res.changed) {
+    CF.setCustom(S.settings.custom);
+    A.renderList();
+    A.refreshCurrent();
+  }
+  renderLine();
+  if (!$('acct').hidden) renderPanel();
+}
+function sync(full) { if (user) return A.syncNow(full, afterSync); return Promise.resolve(false); }
+
+A.onSyncError = function (e) {
+  if (e && e.code === 'permission-denied') A.toast(errText(e));
+  renderLine();
+};
+
+function start() {
+  $('acctLine').hidden = false;
+  renderLine();
+  var cfg = readCfg();
+  if (!cfg) return;
+  loadSdk().then(function () {
+    fb = { app: FB.initializeApp(cfg) };
+    fb.auth = FB.getAuth(fb.app);
+    fb.db = FB.getFirestore(fb.app);
+    FB.onAuthStateChanged(fb.auth, function (u) {
+      var was = user && user.uid;
+      user = u || null;
+      if (user && user.uid !== was) { A.attachRemote(makeColl(fb.db, user.uid)); sync(true); }
+      if (!user) A.detachRemote();
+      renderLine();
+      if (!$('acct').hidden) renderPanel();
+    });
+  }, function () {
+    sdkError = true; renderLine();
+  });
+}
+
+function timeStr(ts) { return ts ? new Date(ts).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) : ''; }
+
+function renderLine() {
+  var el = $('acctLine');
+  if (!readCfg()) { el.textContent = 'Synchroniser iPad ⇄ ordi…'; el.dataset.on = ''; return; }
+  if (sdkError) { el.textContent = 'Compte : ouvre l’appli une fois avec internet'; el.dataset.on = ''; return; }
+  if (!user) { el.textContent = 'Compte : non connecté'; el.dataset.on = ''; return; }
+  el.dataset.on = '1';
+  el.textContent = user.email + (A.store.lastSync ? ' · synchro ' + timeStr(A.store.lastSync) : '');
+}
+
+function msg(text, ok) { var m = $('acctMsg'); if (m) { m.textContent = text || ''; m.className = 'msg' + (ok ? ' ok' : ''); } }
+
+function renderPanel() {
+  var b = $('acctBody');
+  var cfg = readCfg();
+  if (!cfg) {
+    b.innerHTML =
+      '<p>Pour retrouver les mêmes notes sur l’iPad et sur l’ordi, l’appli a besoin d’un petit espace en ligne gratuit (Firebase, de Google). Une seule fois, en 10 minutes : suis le fichier <b>LISEZMOI-COMPTE.txt</b>.</p>' +
+      '<label for="acctCfg">Colle ici le bloc « firebaseConfig » copié depuis Firebase</label>' +
+      '<textarea id="acctCfg" spellcheck="false" autocapitalize="off" autocorrect="off" placeholder="const firebaseConfig = {\n  apiKey: &quot;…&quot;,\n  authDomain: &quot;…&quot;,\n  projectId: &quot;…&quot;,\n  …\n};"></textarea>' +
+      '<div class="btns"><button type="button" class="tbtn primary" id="acctSaveCfg">Enregistrer</button></div><div class="msg" id="acctMsg"></div>';
+    $('acctSaveCfg').addEventListener('click', function () {
+      var c = parseCfg($('acctCfg').value);
+      if (!c) { msg('Je ne trouve pas apiKey, projectId et appId dans le texte collé. Copie tout le bloc firebaseConfig.'); return; }
+      if (!writeCfg(c)) { msg('Impossible d’enregistrer sur cet appareil.'); return; }
+      msg('Configuration enregistrée. Redémarrage…', true);
+      setTimeout(function () { location.reload(); }, 600);
+    });
+    return;
+  }
+  if (sdkError) {
+    b.innerHTML = '<p>Le module de synchronisation n’a pas pu se charger. Ouvre l’appli une fois avec internet, puis réessaie.</p>' +
+      '<div class="btns"><button type="button" class="tbtn" id="acctReload">Réessayer</button></div>';
+    $('acctReload').addEventListener('click', function () { location.reload(); });
+    return;
+  }
+  if (!fb) { b.innerHTML = '<p>Chargement…</p>'; return; }
+  if (!user) {
+    b.innerHTML =
+      '<p>Connecte-toi avec le même e-mail sur l’iPad et sur l’ordi : les notes se synchronisent dès qu’il y a du réseau. Sans réseau, tout reste enregistré sur l’appareil et part plus tard.</p>' +
+      '<label for="acctEmail">E-mail<input id="acctEmail" type="email" autocomplete="username" autocapitalize="off" autocorrect="off" spellcheck="false"></label>' +
+      '<label for="acctPass">Mot de passe<input id="acctPass" type="password" autocomplete="current-password"></label>' +
+      '<div class="btns"><button type="button" class="tbtn primary" id="acctIn">Se connecter</button><button type="button" class="tbtn" id="acctUp">Créer mon compte</button></div>' +
+      '<div class="msg" id="acctMsg"></div>' +
+      '<button type="button" class="link" id="acctForgot">Mot de passe oublié ?</button>' +
+      '<button type="button" class="link" id="acctResetCfg">Changer la configuration Firebase</button>';
+    var go = function (fn, okText) {
+      if (busy) return;
+      var email = $('acctEmail').value.trim(), pass = $('acctPass').value;
+      busy = true; msg('…', true);
+      fn(fb.auth, email, pass).then(function () { busy = false; msg(okText, true); A.toast(okText); }, function (e) { busy = false; msg(errText(e)); });
+    };
+    $('acctIn').addEventListener('click', function () { go(FB.signInWithEmailAndPassword, 'Connecté — synchronisation en cours'); });
+    $('acctUp').addEventListener('click', function () { go(FB.createUserWithEmailAndPassword, 'Compte créé — tes notes partent en ligne'); });
+    $('acctPass').addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); $('acctIn').click(); } });
+    $('acctForgot').addEventListener('click', function () {
+      var email = $('acctEmail').value.trim();
+      if (!email) { msg('Écris ton e-mail au-dessus, puis retouche « Mot de passe oublié ».'); return; }
+      FB.sendPasswordResetEmail(fb.auth, email).then(function () { msg('E-mail de réinitialisation envoyé à ' + email + '.', true); }, function (e) { msg(errText(e)); });
+    });
+    $('acctResetCfg').addEventListener('click', function () {
+      if (!this.dataset.armed) { this.dataset.armed = '1'; this.textContent = 'Touche encore pour effacer la configuration'; return; }
+      writeCfg(null); location.reload();
+    });
+    return;
+  }
+  b.innerHTML =
+    '<p>Connecté avec</p><div class="who">' + esc(user.email) + '</div>' +
+    '<p>' + (A.store.lastSync ? 'Dernière synchronisation à ' + timeStr(A.store.lastSync) + '. ' : '') +
+    'La synchro se fait toute seule à l’ouverture, au retour du réseau et toutes les deux minutes. Tes notes restent aussi sur cet appareil.</p>' +
+    '<div class="btns"><button type="button" class="tbtn primary" id="acctSync">Synchroniser maintenant</button><button type="button" class="tbtn" id="acctOut">Se déconnecter</button></div>' +
+    '<div class="msg" id="acctMsg"></div>';
+  $('acctSync').addEventListener('click', function () {
+    msg('…', true);
+    sync(true).then(function (ok) { msg(ok ? 'Synchronisé à ' + timeStr(A.store.lastSync) : (navigator.onLine === false ? 'Pas de réseau : ce sera fait au retour de la connexion.' : 'La synchronisation a échoué, réessaie.'), ok); });
+  });
+  $('acctOut').addEventListener('click', function () {
+    FB.signOut(fb.auth).then(function () { A.toast('Déconnecté — tes notes restent sur cet appareil'); });
+  });
+}
+
+function openPanel(open) {
+  if (open) renderPanel();
+  $('acct').hidden = !open; $('scrim').hidden = !open;
+  if (open) $('app').classList.remove('drawer');
+}
+
+function boot() {
+  start();
+  $('acctLine').addEventListener('click', function () { openPanel(true); });
+  $('acctClose').addEventListener('click', function () { openPanel(false); });
+  $('scrim').addEventListener('click', function () { openPanel(false); });
+  window.addEventListener('online', function () { sync(false); });
+  document.addEventListener('visibilitychange', function () { if (!document.hidden) sync(false); });
+  setInterval(function () { if (!document.hidden) sync(false); }, 120000);
+}
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot); else boot();
 })(APP);
 </script>

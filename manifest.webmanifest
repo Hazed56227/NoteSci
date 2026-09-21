@@ -1,11 +1,11 @@
 {
-  "name": "Cahier de formules",
-  "short_name": "Cahier",
+  "name": "NoteSci",
+  "short_name": "NoteSci",
   "lang": "fr",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
-  "background_color": "#f0f2f7",
+  "background_color": "#1b1b1b",
   "theme_color": "#f0f2f7",
   "icons": [
     {

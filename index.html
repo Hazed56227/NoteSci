@@ -3,11 +3,11 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Cahier de formules</title>
+<title>NoteSci</title>
 <meta name="description" content="Prise de notes au clavier pour la physique-chimie.">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="Cahier">
+<meta name="apple-mobile-web-app-title" content="NoteSci">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="theme-color" content="#f0f2f7" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#0f131a" media="(prefers-color-scheme: dark)">
@@ -75,8 +75,9 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 2px
   display: flex; flex-direction: column; padding: 18px 14px 14px; gap: 14px;
 }
 .brand { display: flex; align-items: baseline; gap: 8px; padding: 0 6px; }
-.brand b { font-family: var(--serif); font-size: 21px; font-weight: 600; letter-spacing: -.01em; }
-.brand span { font-family: var(--serif); font-style: italic; color: var(--margin); font-size: 21px; }
+.brand { gap: 0; }
+.brand b { font-family: var(--serif); font-size: 22px; font-weight: 650; letter-spacing: -.01em; }
+.brand span { font-family: var(--serif); font-style: italic; font-weight: 600; color: var(--margin); font-size: 22px; }
 .new-note {
   display: flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px;
   border: 1px dashed var(--ink-faint); background: transparent; border-radius: 10px; cursor: pointer;
@@ -333,7 +334,7 @@ strong { font-weight: 650; }
 <body>
 <div class="app" id="app">
   <aside class="side" id="side" aria-label="Mes notes">
-    <div class="brand"><b>Cahier</b><span>de formules</span></div>
+    <div class="brand"><b>Note</b><span>Sci</span></div>
     <div class="side-actions">
       <button class="new-note" id="newNote" type="button">
         <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 3v10M3 8h10" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
@@ -2573,7 +2574,7 @@ function stamp() {
 }
 function backup() {
   closeMenu();
-  A.saveFile('cahier-sauvegarde-' + stamp() + '.json', A.backupData(), 'application/json').then(function (ok) {
+  A.saveFile('notesci-sauvegarde-' + stamp() + '.json', A.backupData(), 'application/json').then(function (ok) {
     if (ok) { S.settings.lastBackup = A.now(); A.persist(); showBackupLine(); }
   });
 }
@@ -2599,7 +2600,7 @@ function importFile(file) {
       A.toast(res.added + ' note(s) ajoutée(s), ' + res.updated + ' mise(s) à jour');
       return;
     }
-    if (obj) { A.toast('Ce fichier n’est pas une sauvegarde du Cahier'); return; }
+    if (obj) { A.toast('Ce fichier n’est pas une sauvegarde NoteSci'); return; }
     var title = file.name.replace(/\.(txt|md)$/i, '');
     var m = /^# (.+)\n\n?/.exec(text);
     if (m) { title = m[1]; text = text.slice(m[0].length); }

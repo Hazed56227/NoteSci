@@ -247,23 +247,25 @@ strong { font-weight: 650; }
 .sep { flex: 0 0 1px; background: var(--line); margin: 6px 2px; }
 .src {
   display: block; width: 100%; resize: none; border: 1px solid var(--line); border-radius: 8px; background: var(--paper);
-  color: var(--ink); font-family: var(--mono); font-size: 16px; line-height: 1.5; padding: 9px 11px; min-height: 44px; max-height: 30vh; overflow: auto;
+  color: var(--ink); font-family: var(--mono); font-size: 16px; line-height: 1.5; padding: 8px 11px; min-height: 42px; max-height: 76px; overflow: auto;
 }
 .src:focus { outline: none; border-color: var(--accent); }
-.live { padding: 2px 6px; font-family: var(--serif); font-size: 17px; line-height: 1.55; min-height: 1.9em; max-height: 120px; overflow: auto; border-radius: 8px; background: var(--chrome); }
+.live { padding: 2px 6px; font-family: var(--serif); font-size: 17px; line-height: 1.55; min-height: 1.9em; max-height: 64px; overflow: auto; border-radius: 8px; background: var(--chrome); }
 .live .blk:hover { background: none; }
 .live .ln.h1 { font-size: 1.2em; padding: .1em 0; }
 .live .ln.h2 { padding: .1em 0; }
 
 /* ligne en cours d'écriture, dans la page */
 .blk.editing { background: color-mix(in srgb, var(--accent-soft) 80%, transparent); box-shadow: -8px 0 0 color-mix(in srgb, var(--accent-soft) 80%, transparent), 8px 0 0 color-mix(in srgb, var(--accent-soft) 80%, transparent); }
-.blk.editing > .ln:last-child::after, .blk.editing.callout > .ln:last-child::after {
-  content: ""; display: inline-block; width: 2px; height: 1.05em; margin-left: 3px; vertical-align: -.18em;
-  background: var(--accent); animation: caret 1.05s steps(1) infinite;
-}
 .blk.editing .ln.blank { min-height: 1.6em; }
+/* curseur à la vraie position dans la page */
+.tcaret, .kcaret {
+  display: inline-block !important; width: 0 !important; height: 1.12em; vertical-align: -.2em; position: relative;
+  margin: 0 -1px; border-left: 2px solid var(--accent); animation: caret 1.05s steps(1) infinite;
+}
+.kcaret { height: 1em; vertical-align: -.18em; }
 @keyframes caret { 50% { opacity: 0; } }
-@media (prefers-reduced-motion: reduce) { .blk.editing > .ln:last-child::after { animation: none; } }
+@media (prefers-reduced-motion: reduce) { .tcaret, .kcaret { animation: none; } }
 
 /* ---------- mode source ---------- */
 .srcall {
@@ -534,7 +536,7 @@ CF.UNI_KW = { '∫':'int', '∬':'iint', '∭':'iiint', '∮':'oint', '∯':'oii
 CF.STOP = {};
 ('le la les l de des du un une et ou où on en est si par sur que qui ne pas au aux se sa son ses ce ces cet ' +
  'il ils je tu me te mes tes nos vos lui eux ton mon ma ta ont va vas dit car via or ni tel peu cas fin but ' +
- 'bon oui non ici vu cf etc ex nb ie eg ok the of and to is it in an as at be by do up').split(' ').forEach(function (w) { CF.STOP[w] = 1; });
+ 'bon oui non ici vu cf etc ex nb ie eg ok ans the of and to is it in an as at be by do up').split(' ').forEach(function (w) { CF.STOP[w] = 1; });
 
 CF.KW_WEAK = { nu:1, infini:1, racine:1, somme:1, vide:1, prop:1, equiv:1, perp:1, deg:1, cdot:1, wedge:1,
   forall:1, exists:1, partial:1, div:1, max:1, min:1, det:1, sup:1, Re:1, Im:1, tr:1, ch:1, sh:1, th:1, arg:1,
@@ -559,10 +561,27 @@ function escText(s) {
 }
 CF.escText = escText;
 
+/* curseur : un caractère réservé glissé dans la ligne en cours, rendu comme une barre clignotante */
+var MARK = '\uE010';
+var MARK_TEX = '\\htmlClass{kcaret}{}';
+CF.MARK = MARK; CF.MARK_TEX = MARK_TEX;
+function clean(t) { return t.split(MARK_TEX).join('').trim(); }
+
 /* ---------- tokeniseur ---------- */
 function tokenize(s, ph) {
+  var caret = s.indexOf(MARK);
+  if (caret >= 0) s = s.split(MARK).join('');
+  var toks = tokenizeRaw(s, ph);
+  if (caret >= 0) {
+    var k = 0;
+    while (k < toks.length && toks[k].s < caret) k++;
+    toks.splice(k, 0, { t: 'mark' });
+  }
+  return toks;
+}
+function tokenizeRaw(s, ph) {
   var toks = [], i = 0, sp = false, m;
-  function push(o) { o.sp = sp; sp = false; toks.push(o); }
+  function push(o) { o.sp = sp; o.s = i; sp = false; toks.push(o); }
   while (i < s.length) {
     var c = s[i];
     if (/\s/.test(c)) { sp = true; i++; continue; }
@@ -629,9 +648,20 @@ function Parser(toks, opt) {
   this.t = toks; this.i = 0; this.o = opt || {}; this.integral = false;
 }
 var P = Parser.prototype;
-P.cur = function () { return this.t[this.i]; };
-P.at = function (n) { return this.t[this.i + n]; };
-P.eof = function () { return this.i >= this.t.length; };
+P.cur = function () {
+  while (this.t[this.i] && this.t[this.i].t === 'mark') { this.i++; this.marks = (this.marks || 0) + 1; }
+  return this.t[this.i];
+};
+P.at = function (n) {
+  for (var j = this.i, k = 0; j < this.t.length; j++) {
+    if (this.t[j].t === 'mark') continue;
+    if (k === n) return this.t[j];
+    k++;
+  }
+  return undefined;
+};
+P.eof = function () { return !this.cur(); };
+P.takeMarks = function () { var n = this.marks || 0; this.marks = 0; return n ? MARK_TEX + ' ' : ''; };
 
 P.parseAll = function () {
   var pieces = [];
@@ -639,6 +669,8 @@ P.parseAll = function () {
     var p = this.item(pieces);
     if (p) pieces.push(p);
   }
+  var tail = this.takeMarks();
+  if (tail) pieces.push({ tex: tail, k: 'ord' });
   return pieces;
 };
 
@@ -653,6 +685,7 @@ P.sub = function (tokens, extra) {
 
 P.item = function (pieces) {
   var tk = this.cur(), sp = !!tk.sp, p;
+  var pre = this.takeMarks();
   switch (tk.t) {
     case 'num': p = this.number(); break;
     case 'id': p = this.ident(); break;
@@ -668,6 +701,7 @@ P.item = function (pieces) {
     default: this.i++; p = { tex: '', k: 'ord' };
   }
   p.sp = sp;
+  if (pre) p.tex = pre + p.tex;
   return this.postfix(p);
 };
 
@@ -764,14 +798,15 @@ P.ident = function () {
   if (ACCENT.test(name) || name.length >= 4 || (label === 'ket' && name.length >= 2)) {
     return this.withDigits({ tex: '\\text{' + escText(name) + '}', k: 'text' });
   }
-  return this.withDigits({ tex: name, k: 'ord' });
+  return this.withDigits({ tex: name, k: 'ord', word: name.length >= 2 });
 };
 
 P.placeholder = function (v) {
   if (!v) return { tex: '', k: 'ord' };
-  if (v.type === 'ce') return { tex: '\\ce{' + cleanCe(v.raw) + '}', k: 'ord' };
+  var cm = v.caret ? MARK_TEX : '';
+  if (v.type === 'ce') return { tex: '\\ce{' + cleanCe(v.raw) + '}' + cm, k: 'ord' };
   var inner = new Parser(tokenize(v.raw, []), { label: 'ket' });
-  return { tex: '\\mathrm{' + join(inner.parseAll()) + '}', k: 'ord' };
+  return { tex: '\\mathrm{' + join(inner.parseAll()) + '}' + cm, k: 'ord' };
 };
 
 function cleanCe(raw) {
@@ -872,8 +907,8 @@ P.scriptArg = function (isSub) {
 P.collectGroup = function () {
   var open = this.cur(); this.i++;
   var depth = 0, start = this.i;
-  while (!this.eof()) {
-    var t = this.cur();
+  while (this.i < this.t.length) {
+    var t = this.t[this.i];
     if (t.t === 'open') depth++;
     else if (t.t === 'close') {
       if (depth === 0) {
@@ -901,8 +936,8 @@ function isBs(t) { return t.t === 'bs'; }
 function isComma(t) { return t.t === 'comma' || t.t === 'semi'; }
 
 P.groupHasRows = function () {
-  var save = this.i, g = this.collectGroup();
-  this.i = save;
+  var save = this.i, sm = this.marks, g = this.collectGroup();
+  this.i = save; this.marks = sm;
   return splitTop(g.inner, isBs).length > 1;
 };
 
@@ -975,12 +1010,12 @@ P.structural = function (name, paren, tight) {
       return { tex: '\\sqrt{' + one() + '}', k: 'ord' };
     case 'cbrt': return { tex: '\\sqrt[3]{' + one() + '}', k: 'ord' };
     case 'vec':
-      x = one(); m = isSingleSym(x);
-      if (m) return { tex: '\\vec{' + m[1] + '}' + m[2], k: 'ord', hasSub: !!m[2] };
+      x = one(); m = isSingleSym(clean(x));
+      if (m) return { tex: '\\vec{' + m[1] + '}' + m[2] + (x.indexOf(MARK_TEX) >= 0 ? MARK_TEX : ''), k: 'ord', hasSub: !!m[2] };
       return { tex: '\\overrightarrow{' + x + '}', k: 'ord' };
     case 'hat': case 'bar': case 'dot': case 'ddot': case 'tilde':
-      x = one(); m = isSingleSym(x);
-      if (m) return { tex: '\\' + name + '{' + m[1] + '}' + m[2], k: 'ord', hasSub: !!m[2] };
+      x = one(); m = isSingleSym(clean(x));
+      if (m) return { tex: '\\' + name + '{' + m[1] + '}' + m[2] + (x.indexOf(MARK_TEX) >= 0 ? MARK_TEX : ''), k: 'ord', hasSub: !!m[2] };
       return { tex: '\\' + ({ hat: 'widehat', bar: 'overline', tilde: 'widetilde' }[name] || name) + '{' + x + '}', k: 'ord' };
     case 'abs': return { tex: '\\left| ' + one() + ' \\right|', k: 'ord' };
     case 'norm': return { tex: '\\left\\| ' + one() + ' \\right\\|', k: 'ord' };
@@ -1009,7 +1044,7 @@ P.structural = function (name, paren, tight) {
       }
       if (a.length >= 3) {
         var n3 = S(a[2]);
-        if (/^\d+$/.test(n3)) return { tex: '\\frac{' + dd + '^{' + n3 + '} ' + f + '}{' + dd + v + '^{' + n3 + '}}', k: 'ord' };
+        if (/^\d+$/.test(clean(n3))) return { tex: '\\frac{' + dd + '^{' + n3 + '} ' + f + '}{' + dd + v + '^{' + n3 + '}}', k: 'ord' };
         return { tex: '\\frac{' + dd + '^{2} ' + f + '}{' + dd + v + '\\,' + dd + n3 + '}', k: 'ord' };
       }
       return { tex: '\\frac{' + dd + f + '}{' + dd + v + '}', k: 'ord' };
@@ -1045,6 +1080,7 @@ function join(pieces) {
     var p = pieces[i], prev = pieces[i - 1];
     if (!p.tex) continue;
     if (prev && p.sp && ((p.k === 'text' && /^(text|ord|num)$/.test(prev.k)) || (prev.k === 'text' && /^(ord|num)$/.test(p.k)))) out += '\\ ';
+    else if (prev && p.sp && prev.k === 'num' && p.word) out += '\\,';
     out += (out && !/\s$/.test(out) ? ' ' : '') + p.tex;
   }
   return out;
@@ -1065,6 +1101,7 @@ if (typeof module === 'object' && module.exports) module.exports = (typeof CF !=
 'use strict';
 
 var ACCENT = /[À-ÖØ-öø-ÿŒœÆæ]/;
+var MARK_RE = /\uE010/g;
 var MATH_CH = /[=+*\/^_<>\\|≈≃∼≡∝≠≤≥⩽⩾≪≫∈∉⊂⊃⊥∥⇔⟺⇒⟹⇐→⟶←↔↦⇌±∓·⋅×÷∧∨∪∩∘∂∞∀∃∅∇ℏℓℝℕℤℚℂ⟨⟩†°∫∬∭∮∯∑∏√∛Α-Ωα-ωϕϵϑµ]/;
 
 /* ---------- raccourcis perso ---------- */
@@ -1097,13 +1134,14 @@ function protect(s, ph) {
       var j = i + m[0].length, d = 1;
       while (j < s.length && d > 0) { if (s[j] === '(') d++; else if (s[j] === ')') d--; j++; }
       var raw = s.slice(i + m[0].length, d === 0 ? j - 1 : j);
-      ph.push({ type: 'ce', raw: raw, src: s.slice(i, j) });
+      ph.push({ type: 'ce', raw: raw.replace(MARK_RE, ''), caret: raw.indexOf('\uE010') >= 0, src: s.slice(i, j) });
       out += '' + (ph.length - 1) + ''; i = j; continue;
     }
     if (s[i] === '"') {
       var k = s.indexOf('"', i + 1);
       if (k > i) {
-        ph.push({ type: 'q', raw: s.slice(i + 1, k), src: s.slice(i, k + 1) });
+        var rq = s.slice(i + 1, k);
+        ph.push({ type: 'q', raw: rq.replace(MARK_RE, ''), caret: rq.indexOf('\uE010') >= 0, src: s.slice(i, k + 1) });
         out += '' + (ph.length - 1) + ''; i = k + 1; continue;
       }
     }
@@ -1124,7 +1162,9 @@ function braket(s) {
 
 /* ---------- classement des mots ---------- */
 // S = maths sûr, N = nombre, W = faible (maths si voisin S), B = opérateur-mot (deux voisins), O = signe seul, J = ponctuation, T = texte
-function classify(w, prevWord) {
+function classify(w0, prevWord) {
+  var w = String(w0).replace(MARK_RE, '');
+  if (w0._q) w = Object.assign(new String(w), { _q: true });
   var core = w.replace(/^\*\*|\*\*$/g, '').replace(/^[(\[«]+/, '').replace(/[)\]»,.;:?!]+$/, '').replace(/^\*\*|\*\*$/g, '');
   if (core === '') return /^[:;,]$/.test(w) ? 'J' : (/^[-+\/]$/.test(w) ? 'O' : 'T');
   if (/^(-|\+|\/|--|\*)$/.test(core)) return 'O';
@@ -1271,7 +1311,7 @@ function fixChunk(chunk, add) {
   if (/^\(/.test(chunk) && parenDelta(chunk) > 0) { pre += '('; chunk = chunk.slice(1); }
   var mTrail = /\s+$/.exec(chunk); if (mTrail) { post = mTrail[0] + post; chunk = chunk.slice(0, -mTrail[0].length); }
   add('text', pre);
-  if (chunk && !/^[\d\s.,]+$/.test(chunk)) add('math', chunk); else add('text', chunk);
+  if (chunk && !/^[\d\s.,]+$/.test(chunk.replace(MARK_RE, ''))) add('math', chunk); else add('text', chunk);
   add('text', post);
 }
 
@@ -1290,9 +1330,15 @@ CF.segments = function (line) {
     var ph = [];
     var p = protect(part, ph);
     if (idx % 2 === 1 && idx < pieces.length - 1) { out.push({ t: 'math', s: braket(p), ph: ph }); return; }
-    autoSegments(braket(p), ph).forEach(function (sg) {
-      if (sg.t === 'text') out.push({ t: 'text', s: restore(sg.s, ph) });
-      else out.push({ t: 'math', s: sg.s, ph: ph });
+    // deux espaces (ou plus) coupent la formule : chaque morceau est lu à part
+    var bits = braket(p).split(/ (\uE010?) +/);
+    bits.forEach(function (bit, bi) {
+      if (bi % 2 === 1) { out.push({ t: 'text', s: ' ' + bit }); return; }
+      if (!bit) return;
+      autoSegments(bit, ph).forEach(function (sg) {
+        if (sg.t === 'text') out.push({ t: 'text', s: restore(sg.s, ph) });
+        else out.push({ t: 'math', s: sg.s, ph: ph });
+      });
     });
   });
   return out;
@@ -1302,6 +1348,17 @@ CF.segments = function (line) {
 var CONT = /^(=|≈|≃|~=|apeu=|≤|≥|⩽|⩾|<==>|<=>|<=|>=|<(?![^<>|=]*\|)|>(?!\s*[A-Za-zÀ-ÿ])|≠|!=|=\/|≡|===|∝|⇔|⟺|⇒|⟹|=>|==>|⇐|:=)/;
 
 CF.lineInfo = function (line) {
+  var mk = line.indexOf('\uE010');
+  if (mk < 0) return lineInfo0(line);
+  var info = lineInfo0(line.replace(MARK_RE, ''));
+  var stripped = line.replace(MARK_RE, '').replace(/\t/g, '    ');
+  var start = stripped.length - info.c.length;       // le contenu est toujours la fin de la ligne
+  var pos = Math.max(0, Math.min(info.c.length, mk - start));
+  if (info.kind === 'blank' || info.kind === 'hr') info.caret = true;
+  else info.c = info.c.slice(0, pos) + '\uE010' + info.c.slice(pos);
+  return info;
+};
+function lineInfo0(line) {
   var raw = line.replace(/\t/g, '    ');
   var ind = /^ */.exec(raw)[0].length;
   var c = raw.slice(ind);
@@ -1313,7 +1370,7 @@ CF.lineInfo = function (line) {
   if ((m = /^>\s?(?![\d=(-])(.*)$/.exec(c)) && !/^>=/.test(c) && !/^>\s*\d/.test(c)) return { kind: 'callout', ind: ind, c: m[1] };
   if (CONT.test(c)) return { kind: 'cont', ind: ind, c: c };
   return { kind: 'para', ind: ind, c: c };
-};
+}
 
 /* rangée d'alignement : connecteur | membre gauche | relation + membre droit */
 CF.alignRow = function (content) {
@@ -1328,7 +1385,7 @@ CF.alignRow = function (content) {
   segs.forEach(function (sg, idx) {
     if (sg.t === 'text') {
       if (!sg.s.trim()) return;
-      var tt = '\\text{' + CF.escText(sg.s.replace(/'/g, '’')) + '}';
+      var tt = textTex(sg.s.replace(/'/g, '’'));
       if (st === 'pre') conn += tt; else if (st === 'lhs') lhs += tt; else rhs += tt;
       return;
     }
@@ -1352,6 +1409,9 @@ CF.alignRow = function (content) {
   return { conn: conn, lhs: lhs, rhs: rhs, rel: rel };
 };
 
+function textTex(str) {
+  return str.split('\uE010').map(function (x) { return x ? '\\text{' + CF.escText(x) + '}' : ''; }).join(' ' + CF.MARK_TEX + ' ');
+}
 CF.hasRelation = function (content) { return CF.alignRow(content).rel; };
 
 CF.alignTex = function (contents) {
@@ -1399,7 +1459,8 @@ CF.katex = function (tex, display) {
   var html;
   try {
     html = katex.renderToString(display ? tex : '\\displaystyle ' + tex, {
-      displayMode: !!display, throwOnError: true, strict: 'ignore', output: 'html', trust: false, maxExpand: 500
+      displayMode: !!display, throwOnError: true, strict: 'ignore', output: 'html', maxExpand: 500,
+      trust: function (ctx) { return ctx.command === '\\htmlClass' && ctx.class === 'kcaret'; }
     });
   } catch (e) {
     html = '<span class="m-err" title="' + escHTML(String(e.message || e)) + '">' + escHTML(tex) + '</span>';
@@ -1411,7 +1472,7 @@ CF.katex = function (tex, display) {
 
 function textHTML(s) {
   var h = escHTML(s.replace(/'/g, '’'));
-  return h.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+  return h.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>').replace(MARK_RE, '<span class="tcaret"></span>');
 }
 
 CF.inlineHTML = function (content) {
@@ -1423,7 +1484,7 @@ CF.inlineHTML = function (content) {
 
 CF.inlineTex = function (content) {
   return CF.segments(content).map(function (sg) {
-    if (sg.t === 'text') return '\\text{' + CF.escText(sg.s) + '}';
+    if (sg.t === 'text') return '\\text{' + CF.escText(sg.s.replace(MARK_RE, '')) + '}';
     return CF.join(CF.parseMath(sg.s, sg.ph));
   }).join(' ');
 };
@@ -1432,7 +1493,7 @@ function lineHTML(info, idx) {
   var st = info.ind ? ' style="--ind:' + info.ind + '"' : '';
   var at = ' data-line="' + idx + '"';
   switch (info.kind) {
-    case 'blank': return '<div class="ln blank"' + at + '></div>';
+    case 'blank': return '<div class="ln blank"' + at + '>' + (info.caret ? '<span class="tcaret"></span>' : '') + '</div>';
     case 'hr': return '<div class="ln hrl"' + at + '><hr></div>';
     case 'h1': case 'h2': case 'h3':
       return '<div class="ln ' + info.kind + '"' + at + st + '>' + CF.inlineHTML(info.c) + '</div>';
@@ -2005,7 +2066,14 @@ function renderDoc() {
     html = ['<div class="blk hint" data-start="0" data-end="1"><div class="ln empty-hint" data-line="0">Touche ici pour écrire. Essaie : v = frac(d, t)</div></div>'];
     renderDoc.blocks = [{ start: 0, end: 1 }];
   } else {
-    var blocks = CF.buildBlocks(S.lines, 0);
+    // la ligne en cours reçoit un curseur à sa vraie position
+    var src = S.lines;
+    if (S.edit >= 0 && S.edit < S.lines.length) {
+      src = S.lines.slice();
+      var v = ta.value, p = Math.min(ta.selectionStart == null ? v.length : ta.selectionStart, v.length);
+      src[S.edit] = v.slice(0, p) + CF.MARK + v.slice(p);
+    }
+    var blocks = CF.buildBlocks(src, 0);
     renderDoc.blocks = blocks;
     html = blocks.map(CF.blockHTML);
   }
@@ -2045,7 +2113,7 @@ function updateLive() {
 
 function autoGrow() {
   ta.style.height = 'auto';
-  ta.style.height = Math.max(44, ta.scrollHeight + 2) + 'px';
+  ta.style.height = Math.min(76, Math.max(42, ta.scrollHeight + 2)) + 'px';
   placeEditor();
 }
 function autoGrowAll() {
@@ -2068,6 +2136,7 @@ function startEdit(idx, caret) {
   while (idx >= S.lines.length) S.lines.push('');
   S.edit = idx;
   ta.value = S.lines[idx];
+  lastValue = ta.value;
   renderDoc();
   autoGrow();
   ta.focus({ preventScroll: true });
@@ -2088,15 +2157,18 @@ function visibleBand() {
   if (!editor.hidden && er.right > sr.left + 56) top = Math.max(top, er.bottom + 12);
   return { top: top, bottom: h - 16 };
 }
+/* garde en vue la LIGNE VISUELLE du curseur (pas tout le paragraphe) :
+   on ne défile que quand elle sort de la zone libre, jamais d'aller-retour */
 function reveal() {
   requestAnimationFrame(function () {
-    var el = editingEl();
-    if (!el) return;
-    var r = el.getBoundingClientRect(), band = visibleBand();
-    if (r.bottom > band.bottom) window.scrollBy(0, r.bottom - band.bottom + 40);
-    else if (r.top < band.top) {
-      // ligne tout en haut, cachée par le panneau : on pousse la page vers le bas
-      var need = band.top - r.top + 16, sp = $('spacer');
+    var c = linesEl.querySelector('.blk.editing .tcaret, .blk.editing .kcaret') || editingEl();
+    if (!c) return;
+    var r = c.getBoundingClientRect(), band = visibleBand();
+    var top = r.top - 4, bottom = r.bottom + 6;
+    // cible fixe (juste au-dessus du clavier / juste sous le traducteur) : aucun aller-retour possible
+    if (bottom > band.bottom) window.scrollBy(0, Math.round(bottom - band.bottom + 10));
+    else if (top < band.top) {
+      var need = Math.round(band.top - top + 10), sp = $('spacer');
       var extra = need - window.scrollY;
       if (extra > 0) sp.style.height = ((parseFloat(sp.style.height) || 0) + extra) + 'px';
       window.scrollBy(0, -Math.min(need, window.scrollY));
@@ -2118,8 +2190,19 @@ function stopEdit(silent) {
   if (!silent) renderDoc();
 }
 
+var lastValue = '';
+function fixPeriodShortcut() {
+  var v = ta.value, c = ta.selectionStart, prev = lastValue;
+  if (c >= 2 && v.length === prev.length + 1 && v.slice(c - 2, c) === '. ' && prev.charAt(c - 2) === ' ' &&
+      v.slice(0, c - 2) === prev.slice(0, c - 2) && v.slice(c) === prev.slice(c - 1)) {
+    ta.value = v.slice(0, c - 2) + '  ' + v.slice(c);
+    ta.setSelectionRange(c, c);
+  }
+}
 function onInput() {
+  fixPeriodShortcut();
   var v = ta.value;
+  lastValue = v;
   if (v.indexOf('\n') >= 0) {
     var caret = ta.selectionStart;
     var parts = v.split('\n');
@@ -2128,7 +2211,7 @@ function onInput() {
     if (parts.length === 2) {
       var m = /^(\s*)([-*•]\s|>\s)?/.exec(parts[0]);
       if (m[2] && parts[0] === m[0] && !parts[1]) {
-        ta.value = m[1]; S.lines[S.edit] = m[1]; touch(); autoGrow(); updateLive(); return;
+        ta.value = m[1]; S.lines[S.edit] = m[1]; lastValue = m[1]; touch(); autoGrow(); updateLive(); return;
       }
       var prefix = m[0];
       if (prefix && parts[1].indexOf(prefix) !== 0) { parts[1] = prefix + parts[1]; caretInLast += prefix.length; }
@@ -2137,6 +2220,7 @@ function onInput() {
     S.lines.splice.apply(S.lines, [S.edit, 1].concat(parts, [last]));
     S.edit += parts.length;
     ta.value = last;
+    lastValue = last;
     ta.setSelectionRange(caretInLast, caretInLast);
     renderDoc();
     touch();
@@ -2165,6 +2249,7 @@ function onKey(e) {
     S.edit--;
     ta.value = prev + ta.value;
     S.lines[S.edit] = ta.value;
+    lastValue = ta.value;
     ta.setSelectionRange(prev.length, prev.length);
     renderDoc(); touch(); autoGrow(); updateLive(); reveal();
     return;
@@ -2218,11 +2303,13 @@ function nextSlot() {
   if (m && v[pos] === ' ') pos++;
   ta.setSelectionRange(pos, pos);
   ta.focus({ preventScroll: true });
+  scheduleLive();
 }
 function moveCaret(d) {
   var p = Math.max(0, Math.min(ta.value.length, (d < 0 ? ta.selectionStart : ta.selectionEnd) + d));
   ta.setSelectionRange(p, p);
   ta.focus({ preventScroll: true });
+  scheduleLive();
 }
 
 /* ---------- barre de touches ---------- */
@@ -2274,6 +2361,7 @@ function buildKeys() {
   r1.appendChild(key('◀', 'nav', function () { moveCaret(-1); }, 'Curseur à gauche'));
   r1.appendChild(key('▶', 'nav', function () { moveCaret(1); }, 'Curseur à droite'));
   r1.appendChild(key('Suivant ⇥', 'next', nextSlot, 'Aller à la case suivante'));
+  r1.appendChild(key('espace ⎵', 'nav', function () { insert('  ', false); }, 'Espace forcé : sort de la formule (= deux espaces)'));
   var sp = document.createElement('span'); sp.className = 'sep'; r1.appendChild(sp);
   STRUCT_KEYS.forEach(function (k) {
     r1.appendChild(key(texLabel(k[1]), '', function () { insert(k[0], !!k[2]); }, k[3]));
@@ -2343,6 +2431,8 @@ A.init = function () {
   buildKeys();
 
   ta.addEventListener('input', onInput);
+  document.addEventListener('selectionchange', function () { if (S.edit >= 0 && document.activeElement === ta) scheduleLive(); });
+  ta.addEventListener('keyup', function (e) { if (/^Arrow|Home|End/.test(e.key)) scheduleLive(); });
   ta.addEventListener('keydown', onKey);
   ta.addEventListener('beforeinput', onBeforeInput);
   ta.addEventListener('blur', function () {
@@ -2423,10 +2513,11 @@ var HELP = [
     '|psi> = a|0> + b|1>', '<phi|psi> et <psi|H|psi>', '<x> et a^dag', '|lapin up>']],
   ['Chimie', 'Tout ce qui est dans ce(…) est une formule chimique : indices et charges sont automatiques.', [
     'ce(H2O) et ce(SO4^2-)', 'ce(2H2 + O2 -> 2H2O)', 'ce(CH3COOH + H2O <=> CH3COO- + H3O+)', 'pH = -log [ce(H3O+)]', 'Ka et pKa et E° et 25 °C']],
-  ['Mise en page', 'Une ligne qui commence par = (ou <=>, <=, …) s’aligne sous la précédente.', [
+  ['Mise en page', 'Une ligne qui commence par = (ou <=>, <=, …) s’aligne sous la précédente. Deux espaces (ou la touche « espace ⎵ ») font sortir de la formule.', [
     ['f(x) = (x+1)^2', '= x^2 + 2x + 1'], ['2x + 3 = 7', '<=> x = 2'],
     '# Titre', '## Sous-titre', '- une puce', '> Définition encadrée', 'box(E = m c^2)', '**important**',
-    'syst(x + y = 1 \\ x - y = 0)', 'v = 3 "m/s"', '$vitesse = frac(distance, temps)$']]
+    'syst(x + y = 1 \\ x - y = 0)', 'v = 3 "m/s"', '$vitesse = frac(distance, temps)$',
+    'E_c T (un espace : collé) et E_c  T (deux espaces : séparé)', 'il y a 2  cas']]
 ];
 
 function exHTML(src) {

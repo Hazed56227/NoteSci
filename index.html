@@ -491,7 +491,7 @@ CF.CHEM = {
 
 /* fonctions "structurelles" : leurs parenthèses sont consommées */
 CF.STRUCT = {};
-('frac dfrac sqrt racine cbrt vec hat bar dot ddot tilde abs norm box encadre ket bra braket moy ' +
+('frac dfrac sqrt racine cbrt vec hat barre conj soul dot ddot tilde abs norm box encadre ket bra braket moy ' +
  'int iint iiint oint oiint sum somme prod lim deriv drond derivsec drondsec syst mat').split(' ').forEach(function (k) { CF.STRUCT[k] = 1; });
 CF.BIGOPS = { int:'\\int', iint:'\\iint', iiint:'\\iiint', oint:'\\oint', oiint:'\\oiint', sum:'\\sum', somme:'\\sum', prod:'\\prod' };
 
@@ -536,11 +536,16 @@ CF.UNI_KW = { '∫':'int', '∬':'iint', '∭':'iiint', '∮':'oint', '∯':'oii
 CF.STOP = {};
 ('le la les l de des du un une et ou où on en est si par sur que qui ne pas au aux se sa son ses ce ces cet ' +
  'il ils je tu me te mes tes nos vos lui eux ton mon ma ta ont va vas dit car via or ni tel peu cas fin but ' +
- 'bon oui non ici vu cf etc ex nb ie eg ok ans the of and to is it in an as at be by do up').split(' ').forEach(function (w) { CF.STOP[w] = 1; });
+ 'bon oui non ici vu cf etc ex nb ie eg ok ans pur gaz air eau feu the of and to is it in an as at be by do up').split(' ').forEach(function (w) { CF.STOP[w] = 1; });
 
 CF.KW_WEAK = { nu:1, infini:1, racine:1, somme:1, vide:1, prop:1, equiv:1, perp:1, deg:1, cdot:1, wedge:1,
   forall:1, exists:1, partial:1, div:1, max:1, min:1, det:1, sup:1, Re:1, Im:1, tr:1, ch:1, sh:1, th:1, arg:1,
-  box:1, dot:1, bar:1, hat:1, mat:1, syst:1, moy:1, abs:1, norm:1, prod:1 };
+  box:1, dot:1, barre:1, conj:1, soul:1, hat:1, mat:1, syst:1, moy:1, abs:1, norm:1, prod:1 };
+/* unités écrites droites juste après un nombre : 3 bar, 2 mol… */
+CF.UNITS = {};
+('bar Pa hPa kPa MPa atm mmHg mol mmol kg mg µg cm mm km nm µm mL dL Hz kHz MHz GHz rad tr kJ kWh eV keV MeV ' +
+ 'MPa Wb Sv Gy Bq lm lx dB ppm').split(' ').forEach(function (u) { CF.UNITS[u] = 1; });
+
 CF.KW_BIN = { vectoriel:1, union:1, inter:1, inclus:1, fois:1 };
 
 })(CF);
@@ -702,12 +707,21 @@ P.item = function (pieces) {
   }
   p.sp = sp;
   if (pre) p.tex = pre + p.tex;
+  this.lastKind = p.k;
   return this.postfix(p);
 };
 
 P.symbol = function (tk, pieces) {
   if (tk.k === 'star') {
     var prev = pieces[pieces.length - 1], nx = this.cur();
+    // « c* » (corps pur, carbone asymétrique, état excité) : collé à gauche, rien de court à droite
+    var glued = !tk.sp && prev;
+    var follows = nx && !nx.sp && (nx.t === 'num' || nx.t === 'id' || (nx.t === 'open' && nx.v === '('));
+    if (glued && !follows) {
+      if (prev.hasSup) { prev.tex = '{' + prev.tex + '}'; }
+      prev.tex += '^{*}'; prev.hasSup = true;
+      return { tex: '', k: prev.k };
+    }
     if (prev && prev.k === 'num' && nx && nx.t === 'num') return { tex: '\\times', k: 'bin' };
     return { tex: '\\cdot', k: 'bin' };
   }
@@ -769,6 +783,11 @@ P.ident = function () {
     if (e && e.t === 'sym' && e.v === '=' && !e.sp) this.i++;
     return { tex: '\\approx', k: 'arel' };
   }
+  var sm = /^(.+?)(barre|soul)$/.exec(name);
+  if (sm && (sm[1].length === 1 || CF.GREEK[sm[1]])) {
+    return this.withDigits({ tex: '\\underline{' + (CF.GREEK[sm[1]] || sm[1]) + '}', k: 'ord' });
+  }
+  if (CF.UNITS[name] && this.lastKind === 'num') return { tex: '\\mathrm{' + name + '}', k: 'ord', word: true };
   if (CF.GREEK[name]) return this.withDigits({ tex: CF.GREEK[name], k: 'ord' });
   if (CF.WORD_SYM[name]) {
     var w = CF.WORD_SYM[name];
@@ -792,7 +811,7 @@ P.ident = function () {
   }
   if (label === 'sub') {
     if (name.length > 1 && !/^[ijklmnpq]+$/.test(name))
-      return this.withDigits({ tex: ACCENT.test(name) ? '\\text{' + escText(name) + '}' : '\\mathrm{' + name + '}', k: 'ord' });
+      return this.withDigits({ tex: ACCENT.test(name) ? '\\text{' + escText(name) + '}' : '\\mathrm{' + name + '}', k: 'text' });
     return this.withDigits({ tex: name, k: 'ord' });
   }
   if (ACCENT.test(name) || name.length >= 4 || (label === 'ket' && name.length >= 2)) {
@@ -950,21 +969,40 @@ P.matrix = function (inner, env) {
   return '\\begin{' + env + '} ' + body + ' \\end{' + env + '}';
 };
 
+var SIZES = ['', '\\big', '\\Big', '\\bigg', '\\Bigg'];
+/* système : grande accolade, une ligne par « \ », fractions en grand */
+function nesting(tokens) {
+  var d = 0, m = 0;
+  for (var i = 0; i < tokens.length; i++) {
+    if (tokens[i].t === 'open') { d++; if (d > m) m = d; }
+    else if (tokens[i].t === 'close') d--;
+  }
+  return m;
+}
+function casesTex(rows) {
+  var tall = rows.some(function (t) { return /\\(frac|sum|int|prod|begin)/.test(t); });
+  var body = rows.map(function (t) { return '& ' + (tall ? '\\displaystyle ' + t : t); }).join(' \\\\[' + (tall ? '.45em' : '.2em') + '] ');
+  return '\\left\\{ \\begin{aligned} ' + body + ' \\end{aligned} \\right.';
+}
+
 P.group = function () {
   var g = this.collectGroup();
   var o = g.open.v, c = g.close ? g.close.v : '';
   var rows = splitTop(g.inner, isBs);
-  if (rows.length > 1 && g.close) {
+  if (rows.length > 1 && (g.close || o === '{')) {
     if (o === '{') {
       var self = this;
-      return { tex: '\\begin{cases} ' + rows.map(function (r) { return self.sub(r); }).join(' \\\\ ') + ' \\end{cases}', k: 'ord' };
+      return { tex: casesTex(rows.map(function (r) { return self.sub(r); })), k: 'ord' };
     }
-    return { tex: this.matrix(g.inner, o === '[' ? 'bmatrix' : 'pmatrix'), k: 'ord' };
+    if (g.close) return { tex: this.matrix(g.inner, o === '[' ? 'bmatrix' : 'pmatrix'), k: 'ord' };
   }
   var inner = this.sub(g.inner);
   if (!g.close) return { tex: OPEN_TEX[o] + ' ' + inner, k: 'ord' };
   if (TALL.test(inner)) return { tex: '{\\left' + LEFT_TEX[o] + ' ' + inner + ' \\right' + RIGHT_TEX[c] + '}', k: 'ord' };
-  return { tex: OPEN_TEX[o] + inner + CLOSE_TEX[c], k: 'ord' };
+  // plus on est à l'extérieur, plus la parenthèse est grande
+  var sz = SIZES[Math.min(nesting(g.inner), SIZES.length - 1)];
+  if (!sz) return { tex: OPEN_TEX[o] + inner + CLOSE_TEX[c], k: 'ord' };
+  return { tex: sz + 'l' + LEFT_TEX[o] + ' ' + inner + ' ' + sz + 'r' + RIGHT_TEX[c], k: 'ord' };
 };
 
 P.args = function () {
@@ -1013,10 +1051,13 @@ P.structural = function (name, paren, tight) {
       x = one(); m = isSingleSym(clean(x));
       if (m) return { tex: '\\vec{' + m[1] + '}' + m[2] + (x.indexOf(MARK_TEX) >= 0 ? MARK_TEX : ''), k: 'ord', hasSub: !!m[2] };
       return { tex: '\\overrightarrow{' + x + '}', k: 'ord' };
-    case 'hat': case 'bar': case 'dot': case 'ddot': case 'tilde':
+    case 'barre': case 'conj': case 'soul':
+      x = one();
+      return { tex: '\\' + (name === 'soul' ? 'underline' : 'overline') + '{' + x + '}', k: 'ord' };
+    case 'hat': case 'dot': case 'ddot': case 'tilde':
       x = one(); m = isSingleSym(clean(x));
       if (m) return { tex: '\\' + name + '{' + m[1] + '}' + m[2] + (x.indexOf(MARK_TEX) >= 0 ? MARK_TEX : ''), k: 'ord', hasSub: !!m[2] };
-      return { tex: '\\' + ({ hat: 'widehat', bar: 'overline', tilde: 'widetilde' }[name] || name) + '{' + x + '}', k: 'ord' };
+      return { tex: '\\' + ({ hat: 'widehat', tilde: 'widetilde' }[name] || name) + '{' + x + '}', k: 'ord' };
     case 'abs': return { tex: '\\left| ' + one() + ' \\right|', k: 'ord' };
     case 'norm': return { tex: '\\left\\| ' + one() + ' \\right\\|', k: 'ord' };
     case 'box': case 'encadre': return { tex: '\\boxed{\\displaystyle ' + joinArgs() + '}', k: 'ord' };
@@ -1054,7 +1095,7 @@ P.structural = function (name, paren, tight) {
       var all = [];
       a.forEach(function (arg, idx) { if (idx) all.push({ t: 'comma', sp: false }); all = all.concat(arg); });
       var rows = splitTop(all, isBs);
-      return { tex: '\\begin{cases} ' + rows.map(function (r) { return S(r); }).join(' \\\\ ') + ' \\end{cases}', k: 'ord' };
+      return { tex: casesTex(rows.map(function (r) { return S(r); })), k: 'ord' };
     }
     case 'mat': {
       if (!a) return { tex: '\\text{mat}', k: 'text' };
@@ -1165,7 +1206,7 @@ function braket(s) {
 function classify(w0, prevWord) {
   var w = String(w0).replace(MARK_RE, '');
   if (w0._q) w = Object.assign(new String(w), { _q: true });
-  var core = w.replace(/^\*\*|\*\*$/g, '').replace(/^[(\[«]+/, '').replace(/[)\]»,.;:?!]+$/, '').replace(/^\*\*|\*\*$/g, '');
+  var core = w.replace(/^\*\*|\*\*$/g, '').replace(/^[(\[{«]+/, '').replace(/[)\]}»,.;:?!]+$/, '').replace(/^\*\*|\*\*$/g, '');
   if (core === '') return /^[:;,]$/.test(w) ? 'J' : (/^[-+\/]$/.test(w) ? 'O' : 'T');
   if (/^(-|\+|\/|--|\*)$/.test(core)) return 'O';
   if (core.indexOf('') >= 0) {
@@ -1199,11 +1240,12 @@ function classify(w0, prevWord) {
   }
   if (/^[A-Za-z]+$/.test(core)) {
     var low = core.toLowerCase();
+    var sm = /^(.+?)(barre|soul)$/.exec(core);          // Zbarre : notation complexe
+    if (sm && (sm[1].length === 1 || CF.GREEK[sm[1]])) return 'S';
     if (CF.KW_BIN[core]) return 'B';
     if (CF.KW_WEAK[core]) return 'W';
     if (CF.GREEK[core] || CF.WORD_SYM[core] || CF.CHEM[core] || CF.STRUCT[core] || low === 'integr' || CF.FUNCS[core] || core === 'apeu') return 'S';
     if (/^(sin|cos|tan|ln|log|exp)([a-z]|alpha|theta|phi|omega)$/.test(core)) return 'S';
-    if (CF.STOP[low]) return 'T';
     if (core.length === 1) {
       if (core === 'a' || core === 'y') {
         var pw = (prevWord || '').toLowerCase().replace(/[^a-zçà]/g, '');
@@ -1212,10 +1254,28 @@ function classify(w0, prevWord) {
       }
       return 'S';
     }
+    if (CF.STOP[low]) return 'T';
     if (core.length <= 3) return 'W';
     return 'T';
   }
   return 'T';
+}
+
+/* coupe sur les doubles espaces, mais pas à l'intérieur d'une parenthèse :
+   « binaire_(2 constituants) » garde son indice entier */
+function splitForced(str) {
+  var out = [], cur = '', d = 0, i = 0, m;
+  while (i < str.length) {
+    var c = str[i];
+    if (c === '(' || c === '[' || c === '{') d++;
+    else if (c === ')' || c === ']' || c === '}') d = Math.max(0, d - 1);
+    if (c === ' ' && d === 0 && (m = /^ (\uE010?) +/.exec(str.slice(i)))) {
+      out.push(cur); out.push(m[1]); cur = ''; i += m[0].length; continue;
+    }
+    cur += c; i++;
+  }
+  out.push(cur);
+  return out;
 }
 
 function parenDelta(s) {
@@ -1331,7 +1391,7 @@ CF.segments = function (line) {
     var p = protect(part, ph);
     if (idx % 2 === 1 && idx < pieces.length - 1) { out.push({ t: 'math', s: braket(p), ph: ph }); return; }
     // deux espaces (ou plus) coupent la formule : chaque morceau est lu à part
-    var bits = braket(p).split(/ (\uE010?) +/);
+    var bits = splitForced(braket(p));
     bits.forEach(function (bit, bi) {
       if (bi % 2 === 1) { out.push({ t: 'text', s: ' ' + bit }); return; }
       if (!bit) return;
@@ -2328,6 +2388,8 @@ var STRUCT_KEYS = [
   ['deriv(¦, )', '\\frac{\\mathrm{d}f}{\\mathrm{d}t}', 1, 'Dérivée : deriv(f, t)'],
   ['|¦>', '|\\psi\\rangle', 0, 'Ket : |psi>'],
   ['<¦|>', '\\langle a|b\\rangle', 0, 'Braket : <a|b>'],
+  ['{¦ \\ ', '\\begin{cases}x\\\\y\\end{cases}', 1, 'Système : {x = … \\ y = …'],
+  ['soul(¦)', '\\underline{Z}', 1, 'Notation complexe : soul(Z) ou Zbarre'],
   ['abs(¦)', '|x|', 1, 'Valeur absolue : abs(x)'],
   ['box(¦)', '\\boxed{x}', 1, 'Encadrer : box(…)'],
   ['ce(¦)', '\\mathrm{H_2O}', 1, 'Chimie : ce(H2O)']
@@ -2501,14 +2563,17 @@ var $ = function (id) { return document.getElementById(id); };
 
 var HELP = [
   ['Fractions, puissances, indices', 'La virgule sépare le haut et le bas. Un indice s’écrit toujours avec _ . Les parenthèses après ^ et _ disparaissent à l’affichage.', [
-    'frac(a, b)', 'frac(1, 2) m v^2', 'e^(i omega_0 t)', 'x^2 et 10^-3 et x^(n+1)', 'v_0 et E_c et v_max et x_(n+1)', 'w_3 (indice) et w3 (w fois 3)', 'sqrt(x) et sqrt(x, 3)']],
+    'frac(a, b)', 'frac(1, 2) m v^2', 'e^(i omega_0 t)', 'x^2 et 10^-3 et x^(n+1)', 'v_0 et E_c et v_max et x_(n+1)', 'w_3 (indice) et w3 (w fois 3)', 'mélange binaire_(2 constituants)', 'sqrt(x) et sqrt(x, 3)']],
   ['Lettres grecques et symboles', 'Tape le nom en entier, ou touche la lettre dans la barre αβ.', [
     'alpha, beta, gamma, delta, theta, lambda', 'mu, nu, pi, rho, sigma, tau, phi, psi, omega', 'Delta, Omega, Phi, Psi, Sigma, Gamma',
     'apeu= et != et <= et >=', '+- et -> et => et <=>', 'inf et hbar et nabla et drond', 'appart RR et pourtout et ilexiste', 'u vectoriel v et u * v et 3*10^8']],
   ['Vecteurs et matrices', 'Le \\ passe à la ligne suivante dans une parenthèse, la virgule change de colonne.', [
-    'vec(F) et vec(u_x) et vec(AB)', '(x \\ y \\ z)', '(a, b \\ c, d)', 'det(a, b \\ c, d)', 'grad(f) et rot(vec(E)) et div(vec(B))', 'norm(vec(v)) et abs(x)', 'dot(x) et ddot(x) et hat(u)']],
+    'vec(F) et vec(u_x) et vec(AB)', '(x \\ y \\ z)', '(a, b \\ c, d)', 'det(a, b \\ c, d)', 'grad(f) et rot(vec(E)) et div(vec(B))', 'norm(vec(v)) et abs(x)', 'dot(x) et ddot(x) et hat(u)', 'barre(x) et conj(z)']],
   ['Analyse', 'Bornes entre parenthèses, collées au mot : int(a, b). Les dx se placent tout seuls.', [
     'int(0, 1) x^2 dx', 'oint(C) vec(B) * vec(dl)', 'iint(S) vec(E) * vec(dS)', 'sum(k=0, n) x^k', 'lim(x -> +inf) frac(1, x) = 0', 'deriv(x, t) et derivsec(x, t)', 'frac(d^2(x)/dt^2)', 'drond(f, x) et drondsec(f, x)', 'drondsec(f, x, y)']],
+  ['Électricité et thermo', 'Le trait des grandeurs complexes s’écrit en collant « barre » à la lettre.', [
+    'Zbarre_C = frac(1, j C omega)', 'Ubarre = Zbarre Ibarre', 'soul(Z) fait pareil que Zbarre',
+    'P = 3 bar et n = 2 mol et T = 25 °C', 'le corps pur mu* et l’état excité A*']],
   ['Quantique', 'Écris les kets comme sur papier.', [
     '|psi> = a|0> + b|1>', '<phi|psi> et <psi|H|psi>', '<x> et a^dag', '|lapin up>']],
   ['Chimie', 'Tout ce qui est dans ce(…) est une formule chimique : indices et charges sont automatiques.', [
@@ -2516,7 +2581,7 @@ var HELP = [
   ['Mise en page', 'Une ligne qui commence par = (ou <=>, <=, …) s’aligne sous la précédente. Deux espaces (ou la touche « espace ⎵ ») font sortir de la formule.', [
     ['f(x) = (x+1)^2', '= x^2 + 2x + 1'], ['2x + 3 = 7', '<=> x = 2'],
     '# Titre', '## Sous-titre', '- une puce', '> Définition encadrée', 'box(E = m c^2)', '**important**',
-    'syst(x + y = 1 \\ x - y = 0)', 'v = 3 "m/s"', '$vitesse = frac(distance, temps)$',
+    ['{x = frac(X-Y, 2) \\ y = frac(X+Y, 2)'], 'syst(x + y = 1 \\ x - y = 0)', 'v = 3 "m/s"', '$vitesse = frac(distance, temps)$',
     'E_c T (un espace : collé) et E_c  T (deux espaces : séparé)', 'il y a 2  cas']]
 ];
 

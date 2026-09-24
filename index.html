@@ -2895,6 +2895,15 @@ function errText(e) {
   return map[c] || ('Erreur : ' + (c || (e && e.message) || 'inconnue'));
 }
 
+/* la configuration peut vivre dans le dépôt : plus rien à coller sur chaque appareil */
+function remoteCfg() {
+  try {
+    return fetch('firebase-config.js', { cache: 'no-cache' })
+      .then(function (r) { return r.ok ? r.text() : null; })
+      .then(function (t) { return t ? parseCfg(t) : null; }, function () { return null; });
+  } catch (e) { return Promise.resolve(null); }
+}
+
 function loadSdk() {
   return new Promise(function (res, rej) {
     if (window.FB) { res(); return; }
@@ -2940,7 +2949,16 @@ function start() {
   $('acctLine').hidden = false;
   renderLine();
   var cfg = readCfg();
-  if (!cfg) return;
+  if (cfg) { init(cfg); return; }
+  remoteCfg().then(function (c) {
+    if (!c) return;
+    writeCfg(c);
+    init(c);
+    if (!$('acct').hidden) renderPanel();
+  });
+}
+
+function init(cfg) {
   loadSdk().then(function () {
     fb = { app: FB.initializeApp(cfg) };
     fb.auth = FB.getAuth(fb.app);
@@ -2977,6 +2995,7 @@ function renderPanel() {
   if (!cfg) {
     b.innerHTML =
       '<p>Pour retrouver les mêmes notes sur l’iPad et sur l’ordi, l’appli a besoin d’un petit espace en ligne gratuit (Firebase, de Google). Une seule fois, en 10 minutes : suis le fichier <b>LISEZMOI-COMPTE.txt</b>.</p>' +
+      '<p><b>Le plus simple :</b> dépose le bloc dans un fichier <code>firebase-config.js</code> à côté de l’appli sur GitHub. L’appli le lit toute seule, sur tous tes appareils, même après une réinstallation — plus rien à coller ici.</p>' +
       '<label for="acctCfg">Colle ici le bloc « firebaseConfig » copié depuis Firebase</label>' +
       '<textarea id="acctCfg" spellcheck="false" autocapitalize="off" autocorrect="off" placeholder="const firebaseConfig = {\n  apiKey: &quot;…&quot;,\n  authDomain: &quot;…&quot;,\n  projectId: &quot;…&quot;,\n  …\n};"></textarea>' +
       '<div class="btns"><button type="button" class="tbtn primary" id="acctSaveCfg">Enregistrer</button></div><div class="msg" id="acctMsg"></div>';

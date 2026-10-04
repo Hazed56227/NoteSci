@@ -824,6 +824,7 @@ P.placeholder = function (v) {
   if (!v) return { tex: '', k: 'ord' };
   var cm = v.caret ? MARK_TEX : '';
   if (v.type === 'ce') return { tex: '\\ce{' + cleanCe(v.raw) + '}' + cm, k: 'ord' };
+  if (v.type === 'txt') return { tex: CF.inlineTex(v.raw), k: 'text' };   // double espace dans une parenthèse
   var inner = new Parser(tokenize(v.raw, []), { label: 'ket' });
   return { tex: '\\mathrm{' + join(inner.parseAll()) + '}' + cm, k: 'ord' };
 };
@@ -1278,6 +1279,41 @@ function splitForced(str) {
   return out;
 }
 
+/* un double espace À L'INTÉRIEUR d'un groupe : la suite redevient du texte,
+   sans casser la parenthèse (le morceau devient un marqueur « txt ») */
+function innerForced(str, ph) {
+  var out = '', i = 0, d = 0;
+  while (i < str.length) {
+    var c = str[i];
+    if (c === '(' || c === '[' || c === '{') { d++; out += c; i++; continue; }
+    if (c === ')' || c === ']' || c === '}') { d = Math.max(0, d - 1); out += c; i++; continue; }
+    if (c === ' ' && d > 0 && /^ {2,}/.test(str.slice(i))) {
+      var j = i; while (str[j] === ' ') j++;
+      var dd = d, raw = '';
+      while (j < str.length) {
+        var c2 = str[j];
+        if (c2 === '(' || c2 === '[' || c2 === '{') dd++;
+        else if (c2 === ')' || c2 === ']' || c2 === '}') { if (dd <= d) break; dd--; }
+        else if (c2 === '\\' && dd === d) break;                      // rangée suivante d'un système
+        else if (c2 === ' ' && /^ {2,}/.test(str.slice(j))) break;     // le double espace suivant repasse en maths
+        raw += c2; j++;
+      }
+      if (raw.trim()) {
+        ph.push({ type: 'txt', raw: restore(raw, ph), caret: false, src: restore(str.slice(i, j), ph) });
+        out += ' \uE000' + (ph.length - 1) + '\uE001';
+      } else out += ' ';
+      i = j;
+      if (str[i] === ' ' && /^ {2,}/.test(str.slice(i))) {   // le double espace suivant ramène aux maths
+        while (str[i] === ' ') i++;
+        out += ' ';
+      }
+      continue;
+    }
+    out += c; i++;
+  }
+  return out;
+}
+
 function parenDelta(s) {
   var d = 0;
   for (var i = 0; i < s.length; i++) { var c = s[i]; if (c === '(' || c === '[' || c === '{') d++; else if (c === ')' || c === ']' || c === '}') d--; }
@@ -1366,7 +1402,16 @@ function fixChunk(chunk, add) {
     if (c === '(' || c === '[' || c === '{') d++;
     else if (c === ')' || c === ']' || c === '}') { d--; if (d < 0 && c !== ']') { cut = i; break; } if (d < 0) d = 0; }
   }
-  if (cut >= 0) { post = chunk.slice(cut) + post; chunk = chunk.slice(0, cut); }
+  if (cut >= 0) {
+    // «  ) » en trop : on la pose telle quelle et on relit la suite normalement
+    var head = chunk.slice(0, cut), rest = chunk.slice(cut + 1);
+    add('text', pre);
+    if (head.trim()) fixChunk(head, add); else add('text', head);
+    add('text', chunk[cut]);
+    if (rest.trim()) fixChunk(rest, add); else add('text', rest);
+    add('text', post);
+    return;
+  }
   // ouvrante orpheline en tête
   if (/^\(/.test(chunk) && parenDelta(chunk) > 0) { pre += '('; chunk = chunk.slice(1); }
   var mTrail = /\s+$/.exec(chunk); if (mTrail) { post = mTrail[0] + post; chunk = chunk.slice(0, -mTrail[0].length); }
@@ -1391,7 +1436,7 @@ CF.segments = function (line) {
     var p = protect(part, ph);
     if (idx % 2 === 1 && idx < pieces.length - 1) { out.push({ t: 'math', s: braket(p), ph: ph }); return; }
     // deux espaces (ou plus) coupent la formule : chaque morceau est lu à part
-    var bits = splitForced(braket(p));
+    var bits = splitForced(innerForced(braket(p), ph));
     bits.forEach(function (bit, bi) {
       if (bi % 2 === 1) { out.push({ t: 'text', s: ' ' + bit }); return; }
       if (!bit) return;
@@ -1431,6 +1476,40 @@ function lineInfo0(line) {
   if (CONT.test(c)) return { kind: 'cont', ind: ind, c: c };
   return { kind: 'para', ind: ind, c: c };
 }
+
+/* « ... {a \\ b} » en fin de ligne : les rangées peuvent se mettre en face
+   des lignes suivantes du cahier */
+function systemAtEnd(c) {
+  var s = String(c).replace(/\s+$/, '');
+  if (s.slice(-1) !== '}') return null;
+  var d = 0, i = s.length - 1, start = -1;
+  for (; i >= 0; i--) {
+    var ch = s[i];
+    if (ch === '}' || ch === ')' || ch === ']') d++;
+    else if (ch === '{' || ch === '(' || ch === '[') { d--; if (d === 0) { if (ch !== '{') return null; start = i; break; } }
+  }
+  if (start < 0) return null;
+  var inner = s.slice(start + 1, s.length - 1), rows = [], cur = '', dd = 0;
+  for (var k = 0; k < inner.length; k++) {
+    var c2 = inner[k];
+    if (c2 === '(' || c2 === '[' || c2 === '{') dd++;
+    else if (c2 === ')' || c2 === ']' || c2 === '}') dd--;
+    if (c2 === '\\' && dd === 0) { rows.push(cur); cur = ''; continue; }
+    cur += c2;
+  }
+  rows.push(cur);
+  if (rows.length < 2 || rows.some(function (r) { return !r.trim(); })) return null;
+  return { before: s.slice(0, start), rows: rows };
+}
+CF.systemAtEnd = systemAtEnd;
+
+/* texte des lignes à gauche, rangées de l'accolade à droite, en vis-à-vis */
+CF.braceTex = function (infos, sys) {
+  var rows = sys.rows.map(function (r) { return CF.inlineTex(r.trim()); });
+  var left = rows.map(function (_, k) { return k === 0 ? CF.inlineTex(sys.before.replace(/\s+$/, '')) : (infos[k] ? CF.inlineTex(infos[k].c) : ''); });
+  var sep = ' \\\\[.25em] ';
+  return '\\begin{array}{l}' + left.join(sep) + '\\end{array} \\; \\left\\{ \\begin{array}{l}' + rows.join(sep) + '\\end{array} \\right.';
+};
 
 /* rangée d'alignement : connecteur | membre gauche | relation + membre droit */
 CF.alignRow = function (content) {
@@ -1493,6 +1572,20 @@ CF.buildBlocks = function (lines, base) {
       blocks.push({ type: 'callout', start: base + i, end: base + j, infos: infos.slice(i, j) });
       i = j; continue;
     }
+    if (info.kind === 'para') {
+      var sys = systemAtEnd(info.c);
+      if (sys && sys.before.trim()) {
+        var need = sys.rows.length - 1, okb = need > 0;
+        for (var q = 1; q <= need && okb; q++) {
+          var nx = infos[i + q];
+          if (!nx || nx.kind !== 'para' || !nx.c.trim() || systemAtEnd(nx.c)) okb = false;
+        }
+        if (okb) {
+          blocks.push({ type: 'brace', start: base + i, end: base + i + need + 1, infos: infos.slice(i, i + need + 1), sys: sys });
+          i += need + 1; continue;
+        }
+      }
+    }
     if (info.kind === 'para' || info.kind === 'cont') {
       j = i + 1;
       while (j < lines.length && infos[j].kind === 'cont') j++;
@@ -1544,7 +1637,7 @@ CF.inlineHTML = function (content) {
 
 CF.inlineTex = function (content) {
   return CF.segments(content).map(function (sg) {
-    if (sg.t === 'text') return '\\text{' + CF.escText(sg.s.replace(MARK_RE, '')) + '}';
+    if (sg.t === 'text') return textTex(sg.s.replace(/'/g, '\u2019'));
     return CF.join(CF.parseMath(sg.s, sg.ph));
   }).join(' ');
 };
@@ -1567,12 +1660,16 @@ function lineHTML(info, idx) {
 }
 
 CF.blockHTML = function (b) {
-  var key = b.type + '\u0001' + b.start + '\u0001' + b.infos.map(function (x) { return x.kind + ':' + x.ind + ':' + x.c; }).join('\u0002');
+  var key = b.type + '\u0001' + b.start + '\u0001' + b.infos.map(function (x) { return (x.caret ? '!' : '') + x.kind + ':' + x.ind + ':' + x.c; }).join('\u0002');
   if (cache.has(key)) return cache.get(key);
   var html;
   if (b.type === 'callout') {
     html = '<div class="blk callout" data-start="' + b.start + '" data-end="' + b.end + '">' +
       b.infos.map(function (inf, k) { return lineHTML(inf, b.start + k); }).join('') + '</div>';
+  } else if (b.type === 'brace') {
+    var sb = b.infos[0].ind ? ' style="--ind:' + b.infos[0].ind + '"' : '';
+    html = '<div class="blk align brace" data-start="' + b.start + '" data-end="' + b.end + '"' + sb + '><div class="ax">' +
+      CF.katex(CF.braceTex(b.infos, b.sys), true) + '</div></div>';
   } else if (b.type === 'align') {
     var st = b.infos[0].ind ? ' style="--ind:' + b.infos[0].ind + '"' : '';
     html = '<div class="blk align" data-start="' + b.start + '" data-end="' + b.end + '"' + st + '><div class="ax">' +
@@ -2578,11 +2675,13 @@ var HELP = [
     '|psi> = a|0> + b|1>', '<phi|psi> et <psi|H|psi>', '<x> et a^dag', '|lapin up>']],
   ['Chimie', 'Tout ce qui est dans ce(…) est une formule chimique : indices et charges sont automatiques.', [
     'ce(H2O) et ce(SO4^2-)', 'ce(2H2 + O2 -> 2H2O)', 'ce(CH3COOH + H2O <=> CH3COO- + H3O+)', 'pH = -log [ce(H3O+)]', 'Ka et pKa et E° et 25 °C']],
-  ['Mise en page', 'Une ligne qui commence par = (ou <=>, <=, …) s’aligne sous la précédente. Deux espaces (ou la touche « espace ⎵ ») font sortir de la formule.', [
+  ['Mise en page', 'Une ligne qui commence par = (ou <=>, <=, …) s’aligne sous la précédente. Deux espaces (ou la touche « espace ⎵ ») font sortir de la formule, y compris à l’intérieur d’une parenthèse. Une accolade posée en fin de ligne met ses rangées en face des lignes suivantes.', [
     ['f(x) = (x+1)^2', '= x^2 + 2x + 1'], ['2x + 3 = 7', '<=> x = 2'],
     '# Titre', '## Sous-titre', '- une puce', '> Définition encadrée', 'box(E = m c^2)', '**important**',
     ['{x = frac(X-Y, 2) \\ y = frac(X+Y, 2)'], 'syst(x + y = 1 \\ x - y = 0)', 'v = 3 "m/s"', '$vitesse = frac(distance, temps)$',
-    'E_c T (un espace : collé) et E_c  T (deux espaces : séparé)', 'il y a 2  cas']]
+    'E_c T (un espace : collé) et E_c  T (deux espaces : séparé)', 'il y a 2  cas',
+    '(E_c = frac(1,2) m v^2  avec v la vitesse)',
+    ['S extensive {[S] \\ ([U]  intensive)}', 'U extensive']]]
 ];
 
 function exHTML(src) {
@@ -2883,6 +2982,7 @@ function errText(e) {
     'auth/user-not-found': 'Aucun compte avec cette adresse : touche « Créer mon compte ».',
     'auth/network-request-failed': 'Pas de connexion internet. Réessaie quand tu as du réseau.',
     'auth/too-many-requests': 'Trop d’essais. Attends quelques minutes puis réessaie.',
+    'auth/admin-restricted-operation': 'Les inscriptions sont fermées dans ton projet Firebase. Pour créer un compte : Authentication → Settings → User actions → coche « Enable create (sign-up) ».',
     'auth/operation-not-allowed': 'Dans Firebase, active « E-mail/Mot de passe » (Authentication → Sign-in method).',
     'auth/configuration-not-found': 'Dans Firebase, ouvre Authentication et touche « Commencer », puis active « E-mail/Mot de passe ».',
     'auth/unauthorized-domain': 'Dans Firebase : Authentication → Settings → Domaines autorisés → ajoute ' + location.hostname + '.',

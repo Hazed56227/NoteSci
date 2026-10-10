@@ -399,6 +399,7 @@ svg.fig.drawing { touch-action: none; cursor: crosshair; border-color: var(--acc
 .todo-pop { position: fixed; left: 50%; top: 14%; transform: translateX(-50%); z-index: 60; width: min(420px, calc(100vw - 32px)); background: var(--chrome); border: 1px solid var(--line); border-radius: 14px; box-shadow: var(--shadow); padding: 14px; display: grid; gap: 8px; }
 .todo-pop h3 { margin: 0 0 2px; font-size: 15px; }
 .todo-pop-foot { display: flex; justify-content: flex-end; }
+.save-state { cursor: pointer; }
 </style>
 <style>:root{padding-top:0}body{padding-left:env(safe-area-inset-left,0px);padding-right:env(safe-area-inset-right,0px)}</style>
 </head>
@@ -418,7 +419,7 @@ svg.fig.drawing { touch-action: none; cursor: crosshair; border-color: var(--acc
     </div>
     <ul class="notes" id="notes"></ul>
     <div class="side-foot">
-      <div class="save-state" id="saveState" data-s="local"><i></i><span>Sur cet appareil</span></div>
+      <div class="save-state" id="saveState" data-s="local" role="button" tabindex="0" title="Touche pour forcer la synchronisation"><i></i><span>Sur cet appareil</span></div>
       <button type="button" class="acct-line" id="acctLine" hidden>Compte : non connecté</button>
       <button type="button" class="todo-line" id="todoLine" hidden>Travail à faire : rien</button>
       <button type="button" class="backup-line" id="backupLine">Dernière sauvegarde dans Fichiers : jamais</button>
@@ -2238,17 +2239,53 @@ function writeLocal() {
 A.store = { db: null, coll: null, mode: 'local', queue: {}, timers: {} };
 var ST = A.store;
 
+/* iPadOS annonce parfois « hors ligne » à tort : on se fie d'abord à ce qui est
+   réellement passé sur le réseau, navigator.onLine n'est qu'un indice */
+ST.lastOk = 0;
+function netOk() { ST.lastOk = Date.now(); ST.lastErr = ''; }
+A.netInfo = function () {
+  return { pending: Object.keys(ST.pending), lastOk: ST.lastOk, err: ST.lastErr || '', compte: !!ST.coll, onLine: navigator.onLine };
+};
+A.netSeemsOff = function () {
+  return navigator.onLine === false && Date.now() - ST.lastOk > 120000;
+};
 A.setStatus = function (s) {
   var el = document.getElementById('saveState');
   if (!el) return;
-  var off = ST.coll && (navigator.onLine === false || Object.keys(ST.pending).length > 0);
-  var mode = s || (!localOK ? 'memory' : off ? 'offline' : ST.coll ? 'cloud' : 'local');
-  el.dataset.s = mode;
+  var waiting = Object.keys(ST.pending).length;
+  var mode = s;
+  if (!mode) {
+    if (!localOK) mode = 'memory';
+    else if (!ST.coll) mode = 'local';
+    else if (waiting && navigator.onLine === false) mode = 'offline';   // amphi : rien n'est perdu
+    else if (waiting) mode = 'waiting';                                  // réseau là, mais ça coince
+    else if (A.netSeemsOff()) mode = 'offline';
+    else mode = 'cloud';                                                 // tout est parti
+  }
+  el.dataset.s = mode === 'waiting' ? 'offline' : mode;
   el.querySelector('span').textContent = {
     cloud: 'Synchronisé avec ton compte', saving: 'Enregistrement…',
     local: 'Enregistré sur cet appareil', memory: 'Non enregistré — exporte ta note',
+    waiting: waiting + (waiting > 1 ? ' notes à envoyer' : ' note à envoyer') + ' — touche pour réessayer',
     offline: 'Hors ligne — gardé sur cet appareil, envoyé au retour du réseau'
   }[mode];
+};
+
+/* touche sur la ligne d'état : on retente tout de suite et on dit ce qui coince */
+A.retryNow = function () {
+  if (!ST.coll) { A.toast('Pas de compte : tes notes restent sur cet appareil.'); return; }
+  var n = Object.keys(ST.pending).length;
+  A.toast(n ? 'Nouvel essai d’envoi (' + n + ')…' : 'Vérification de la synchro…');
+  Promise.resolve(A.flushPending()).then(function () {
+    return A.syncNow(false, null);
+  }).then(function (ok) {
+    return Promise.resolve(A.flushPending()).then(function () { return ok; });
+  }).then(function (ok) {
+    var left = Object.keys(ST.pending).length;
+    if (ok && !left) A.toast('À jour avec ton compte.');
+    else if (left) A.toast(left + ' élément(s) en attente' + (ST.lastErr ? ' (' + ST.lastErr + ')' : '') + ' — réessai automatique.');
+    else A.toast('Réseau injoignable pour l’instant' + (ST.lastErr ? ' (' + ST.lastErr + ')' : '') + '.');
+  });
 };
 
 A.loadInitial = function () {
@@ -2282,38 +2319,49 @@ function withTimeout(p, ms) {
   });
 }
 ST.pending = {};
-function pushDoc(id, data) {
+function pushDoc(id, data, force) {
   if (!ST.coll) return Promise.resolve();
-  if (navigator.onLine === false) { ST.pending[id] = true; A.setStatus('offline'); return Promise.resolve(); }
+  // hors ligne annoncé : on met de côté sans bloquer la file d'attente…
+  if (navigator.onLine === false && !force) { ST.pending[id] = true; A.setStatus(); return Promise.resolve(); }
   var prev = ST.queue[id] || Promise.resolve();
+  // … mais les renvois, eux, essaient pour de vrai : iPadOS annonce parfois « hors ligne » à tort
+  var ms = navigator.onLine === false ? 3000 : 12000;
   var p = prev.then(function () {
-    return withTimeout(data === null ? ST.coll.doc(id).delete() : ST.coll.doc(id).set(data), 12000);
+    return withTimeout(data === null ? ST.coll.doc(id).delete() : ST.coll.doc(id).set(data), ms);
   }).then(function () {
     delete ST.pending[id];
+    netOk();
+    A.setStatus();                 // l'écriture est passée : on repasse au vert tout de suite
   }, function (e) {
     if (e && e.code === 'quota_exceeded') { A.toast('Espace de synchronisation plein : supprime des notes.'); return; }
-    ST.pending[id] = true;   // réessayé au retour du réseau
-    A.setStatus('offline');
+    ST.pending[id] = true;   // renvoyé plus tard, tout seul
+    ST.lastErr = (e && (e.code || e.message)) || 'réseau';
+    A.setStatus();
   });
   ST.queue[id] = p;
   return p;
 }
 
 /* renvoie tout ce qui n'a pas pu partir (hors ligne dans l'amphi) */
+var flushing = null;
 A.flushPending = function () {
-  if (!ST.coll || navigator.onLine === false) return;
+  if (!ST.coll) return Promise.resolve();
+  if (flushing) return flushing;
   var ids = Object.keys(ST.pending);
-  if (!ids.length) return;
+  if (!ids.length) return Promise.resolve();
   A.setStatus('saving');
-  Promise.all(ids.map(function (id) {
-    if (id === 'settings') return pushDoc(id, settingsData());
+  flushing = Promise.all(ids.map(function (id) {
+    if (id === 'settings') return pushDoc(id, settingsData(), true);
     var n = S.notes.find(function (x) { return x.id === id; });
-    return pushDoc(id, n ? docData(n) : null);
-  })).then(function () { A.setStatus(); });
+    return pushDoc(id, n ? docData(n) : null, true);
+  })).then(function () { flushing = null; A.setStatus(); }, function () { flushing = null; A.setStatus(); });
+  return flushing;
 };
-window.addEventListener('online', function () { A.flushPending(); });
+window.addEventListener('online', function () { A.flushPending(); A.setStatus(); });
 window.addEventListener('offline', function () { A.setStatus(); });
-setInterval(function () { if (Object.keys(ST.pending).length) A.flushPending(); }, 30000);
+document.addEventListener('visibilitychange', function () { if (!document.hidden) A.flushPending(); });
+window.addEventListener('focus', function () { A.flushPending(); });
+setInterval(function () { if (Object.keys(ST.pending).length) A.flushPending(); }, 15000);
 
 A.saveNote = function (note, immediate) {
   note.updated = A.now();
@@ -2444,7 +2492,6 @@ A.detachRemote = function () { ST.coll = null; ST.pending = {}; A.setStatus(); }
 var syncing = false;
 A.syncNow = function (full, onMerged) {
   if (!ST.coll || syncing) return Promise.resolve(false);
-  if (navigator.onLine === false) { A.setStatus('offline'); return Promise.resolve(false); }
   syncing = true;
   var incremental = !full && ST.since && ST.coll.since;
   // marge de 5 min : couvre un léger décalage d'horloge entre l'iPad et l'ordi
@@ -2452,6 +2499,7 @@ A.syncNow = function (full, onMerged) {
   return withTimeout(p, 15000).then(function (snap) {
     var res = merge(snap, { incremental: !!incremental });
     ST.lastSync = A.now();
+    netOk();
     syncing = false;
     A.flushPending();
     A.setStatus();
@@ -2459,7 +2507,8 @@ A.syncNow = function (full, onMerged) {
     return true;
   }, function (e) {
     syncing = false;
-    A.setStatus('offline');
+    ST.lastErr = (e && (e.code || e.message)) || 'réseau';
+    A.setStatus(A.netSeemsOff() ? 'offline' : null);
     if (A.onSyncError) A.onSyncError(e);
     return false;
   });
@@ -3798,6 +3847,7 @@ function boot() {
   $('newNote').addEventListener('click', function () { A.newNote(); $('app').classList.remove('drawer'); $('scrim').hidden = true; });
   $('newFolder').addEventListener('click', function () { A.newFolder(); });
   $('moveBtn').addEventListener('click', function (e) { e.stopPropagation(); showMoveList(); });
+  $('saveState').addEventListener('click', function () { if (A.retryNow) A.retryNow(); });
   $('backupBtn').addEventListener('click', backup);
   $('backupLine').addEventListener('click', backup);
   $('importBtn').addEventListener('click', function () { closeMenu(); $('importFile').value = ''; $('importFile').click(); });

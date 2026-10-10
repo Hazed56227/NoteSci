@@ -1,5 +1,5 @@
 /* Cahier de formules — fonctionne sans réseau (amphi) */
-const VERSION = 'cahier-5d1cbf23ae';
+const VERSION = 'cahier-e2d454e014';
 const CORE = ['./', './index.html', './firebase.js', './manifest.webmanifest', './icon-180.png', './icon-192.png', './icon-512.png'];
 
 self.addEventListener('install', (e) => {

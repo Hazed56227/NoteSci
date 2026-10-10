@@ -2031,22 +2031,30 @@ function textHTML(s) {
   return h.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>').replace(MARK_RE, '<span class="tcaret"></span>');
 }
 
-function plainHTML(content) {
+/* st : { b, u } — le gras et le souligné doivent aussi passer DANS les formules,
+   KaTeX ayant sa propre graisse et ses blocs insensibles au soulignement CSS */
+function plainHTML(content, st) {
+  st = st || {};
   return CF.segments(content).map(function (sg) {
     if (sg.t === 'text') return textHTML(sg.s);
-    return '<span class="m">' + CF.katex(CF.join(CF.parseMath(sg.s, sg.ph)), false) + '</span>';
+    var tex = CF.join(CF.parseMath(sg.s, sg.ph));
+    if (st.b) tex = '\\boldsymbol{' + tex + '}';
+    if (st.u) tex = '\\underline{' + tex + '}';
+    return '<span class="m">' + CF.katex(tex, false) + '</span>';
   }).join('');
 }
 
-CF.inlineHTML = function (content) {
+CF.inlineHTML = function (content, st) {
+  st = st || {};
   var runs = fmtRuns(content);
-  if (runs.length === 1 && !runs[0].style) return plainHTML(content);
+  if (runs.length === 1 && !runs[0].style) return plainHTML(content, st);
   return runs.map(function (r) {
-    var h = r.style ? CF.inlineHTML(r.s) : plainHTML(r.s);
+    if (!r.style) return plainHTML(r.s, st);
+    var st2 = { b: st.b || r.style === 'b', u: st.u || r.style === 'u' };
+    var h = CF.inlineHTML(r.s, st2);
     if (r.style === 'b') return '<strong>' + h + '</strong>';
     if (r.style === 'u') return '<u>' + h + '</u>';
-    if (r.style === 'c') return '<span class="fc" style="color:' + r.color + '">' + h + '</span>';
-    return h;
+    return '<span class="fc" style="color:' + r.color + '">' + h + '</span>';
   }).join('');
 };
 
@@ -2883,8 +2891,8 @@ function insert(tpl, word) {
 A.insert = insert;
 
 /* remplace toute la ligne en cours (annulation possible par l'éditeur) */
-A.setLine = function (nv, caret) { setLine(nv, caret); };
-function setLine(nv, caret) {
+A.setLine = function (nv, caret, end) { setLine(nv, caret, end); };
+function setLine(nv, caret, end) {
   var v = ta.value;
   ta.focus({ preventScroll: true });
   ta.setSelectionRange(0, v.length);
@@ -2892,8 +2900,42 @@ function setLine(nv, caret) {
   try { ok = document.execCommand && document.execCommand('insertText', false, nv); } catch (err) { ok = false; }
   if (!ok || ta.value !== nv) { ta.value = nv; }
   var c = Math.max(0, Math.min(nv.length, caret));
-  ta.setSelectionRange(c, c);
+  var c2 = end == null ? c : Math.max(c, Math.min(nv.length, end));
+  ta.setSelectionRange(c, c2);
   onInput();
+}
+
+/* B, U et les couleurs sont des bascules : un deuxième appui enlève la marque */
+var FMT_PAT = {
+  b: '\\*\\*([^*\\n]+)\\*\\*',
+  u: '__([^_\\n]+)__',
+  c: '\\[(rouge|bleu|vert|jaune|violet|noir):([^\\]\\n]*)\\]'
+};
+function fmtHit(kind, v, s, e) {
+  var re = new RegExp(FMT_PAT[kind], 'g'), m;
+  while ((m = re.exec(v))) {
+    var a = m.index, b = a + m[0].length;
+    var touche = s === e ? (s > a && s < b) : (s < b && e > a);
+    if (touche) return { a: a, b: b, m: m, inner: kind === 'c' ? m[2] : m[1], name: kind === 'c' ? m[1] : '' };
+  }
+  return null;
+}
+function fmtToggle(kind, name) {
+  if (S.edit < 0) return;
+  var v = ta.value, s = ta.selectionStart, e = ta.selectionEnd;
+  var hit = fmtHit(kind, v, s, e);
+  if (hit) {
+    if (kind === 'c' && name && name !== hit.name) {            // changer de couleur
+      var rep2 = '[' + name + ':' + hit.inner + ']';
+      var start = hit.a + name.length + 2;
+      setLine(v.slice(0, hit.a) + rep2 + v.slice(hit.b), start, start + hit.inner.length);
+      return;
+    }
+    // on retire la marque et on garde le texte sélectionné : un nouvel appui le remet
+    setLine(v.slice(0, hit.a) + hit.inner + v.slice(hit.b), hit.a, hit.a + hit.inner.length);
+    return;
+  }
+  insert(kind === 'b' ? '**¦**' : kind === 'u' ? '__¦__' : '[' + name + ':¦]', false);
 }
 
 /* le bouton noir enlève la couleur autour de la sélection */
@@ -2981,16 +3023,16 @@ function swatch(name) {
   var dot = document.createElement('span'); dot.className = 'dot'; dot.style.background = c;
   var b = key(dot, 'col', function () {
     if (A.figActive && A.figActive()) { A.figPenColor(name === 'noir' ? '#14161c' : c); return; }
-    if (name === 'noir') uncolor(); else insert('[' + name + ':¦]', false);
-  }, name === 'noir' ? 'Enlever la couleur (ou stylo noir)' : 'Mettre en ' + name);
+    if (name === 'noir') uncolor(); else fmtToggle('c', name);
+  }, name === 'noir' ? 'Enlever la couleur (ou stylo noir)' : 'Mettre en ' + name + ' (deuxième appui : enlever)');
   return b;
 }
 
 function buildKeys() {
   var kb = $('kb');
   var r1 = document.createElement('div'); r1.className = 'row';
-  r1.appendChild(key('B', 'fmt b', function () { insert('**¦**', false); }, 'Gras (sur la sélection)'));
-  r1.appendChild(key('U', 'fmt u', function () { insert('__¦__', false); }, 'Souligner (sur la sélection)'));
+  r1.appendChild(key('B', 'fmt b', function () { fmtToggle('b'); }, 'Gras — deuxième appui : enlever'));
+  r1.appendChild(key('U', 'fmt u', function () { fmtToggle('u'); }, 'Souligner — deuxième appui : enlever'));
   CF.COLOR_NAMES.forEach(function (n) { r1.appendChild(swatch(n)); });
   var sp = document.createElement('span'); sp.className = 'sep'; r1.appendChild(sp);
   r1.appendChild(key('Repère', 'wide', function () { A.figMenu(); }, 'Insérer un repère (cartésien, polaire, circulaire)'));
@@ -3530,8 +3572,8 @@ var HELP = [
     '|psi> = a|0> + b|1>', '<phi|psi> et <psi|H|psi>', '<x> et a^dag', '|lapin up>']],
   ['Chimie', 'Tout ce qui est dans ce(…) est une formule chimique : indices et charges sont automatiques.', [
     'ce(H2O) et ce(SO4^2-)', 'ce(2H2 + O2 -> 2H2O)', 'ce(CH3COOH + H2O <=> CH3COO- + H3O+)', 'pH = -log [ce(H3O+)]', 'Ka et pKa et E° et 25 °C']],
-  ['Couleurs, gras, souligné', 'Sélectionne un bout de ligne puis touche <b>B</b>, <b>U</b> ou une pastille de couleur en haut de la barre. La pastille noire enlève la couleur.', [
-    '**important**', '__à retenir__', '[rouge:attention] et [bleu:E = m c^2]', '[vert:dS = frac(delta Q, T)] et [violet:cas limite]']],
+  ['Couleurs, gras, souligné', 'Sélectionne un bout de ligne puis touche <b>B</b>, <b>U</b> ou une pastille de couleur en haut de la barre. Un deuxième appui enlève la marque, une autre pastille change la couleur, et la pastille noire l’enlève. Ça marche aussi sur les formules : vecteurs, lettres grecques, fractions.', [
+    '**important**', '__à retenir__', '**vec(F)** = m **vec(a)**', '[rouge:attention] et [bleu:E = m c^2]', '[vert:dS = frac(delta Q, T)] et [violet:cas limite]']],
   ['Mise en page', 'Une ligne qui commence par = (ou <=>, <=, …) s’aligne sous la précédente. Deux espaces (ou la touche « espace ⎵ ») font sortir de la formule, y compris à l’intérieur d’une parenthèse. Une accolade posée en fin de ligne met ses rangées en face des lignes suivantes.', [
     ['f(x) = (x+1)^2', '= x^2 + 2x + 1'], ['2x + 3 = 7', '<=> x = 2'],
     '# Titre', '## Sous-titre', '- une puce', '> Définition encadrée', 'box(E = m c^2)', '**important**',

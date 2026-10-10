@@ -330,6 +330,75 @@ strong { font-weight: 650; }
 }
 .narrow-only { display: none !important; }
 @media (max-width: 600px) { .narrow-only { display: grid !important; } }
+
+/* mise en forme dans la barre */
+.k.fmt { min-width: 34px; font-size: 15px; }
+.k.fmt.b { font-weight: 800; }
+.k.fmt.u { text-decoration: underline; }
+.k.col { min-width: 30px; padding: 0 6px; }
+.k.col .dot { display: block; width: 17px; height: 17px; border-radius: 50%; box-shadow: inset 0 0 0 1px rgba(0,0,0,.18); }
+.k.wide { font-size: 13px; }
+.ln u, .lnb u { text-underline-offset: .18em; }
+
+/* repères */
+.ln.figln { padding: .3em 0; }
+svg.fig { display: block; max-width: 100%; height: auto; color: var(--ink); background: color-mix(in srgb, var(--paper) 82%, #fff); border: 1px solid var(--line); border-radius: 10px; touch-action: manipulation; }
+svg.fig.drawing { touch-action: none; cursor: crosshair; border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-soft); }
+.fg-dash { stroke-dasharray: 5 3.5; }
+.fg-pt { opacity: .85; }
+.fg-va { fill: none; stroke-width: .9; }
+.fg-ax path { fill: none; stroke: var(--ink-soft); stroke-width: 1.2; }
+.fg-circ { fill: none; stroke: var(--ink-soft); stroke-width: 1.1; }
+.fg-t { font-family: var(--serif); font-style: italic; font-size: 12px; fill: var(--ink-soft); }
+.fg-t.sm { font-size: 10px; font-style: normal; }
+.fg-s { fill: none; stroke-width: 2.1; stroke-linecap: round; stroke-linejoin: round; }
+.fg-free { stroke-width: 1.9; }
+.fg-lab { font-family: var(--serif); font-size: 11.5px; }
+.fg-live { fill: none; stroke: var(--ink-faint); stroke-width: 2; stroke-dasharray: 4 3; }
+
+/* barre du repère */
+.figbar { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; padding: 4px 0 2px; }
+.figbar .k.pen[aria-pressed="true"], .figbar .k.tgl[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); }
+.figbar .k.tgl { min-width: 34px; }
+.figbar .ink { width: 16px; height: 16px; border-radius: 50%; box-shadow: inset 0 0 0 1px rgba(0,0,0,.2); }
+.figlab { flex: 1; min-width: 120px; font: inherit; font-size: 13px; padding: 6px 8px; border: 1px solid var(--line); border-radius: 8px; background: var(--edit-bg); color: var(--ink); }
+.k.danger { color: var(--danger); }
+.figpick { display: flex; gap: 6px; padding: 6px 0 2px; }
+.figpick button { font: inherit; font-size: 13px; padding: 8px 12px; border: 1px solid var(--line); border-radius: 9px; background: var(--key); color: var(--key-ink); cursor: pointer; }
+
+/* agenda */
+.todo-line { border: 0; background: transparent; text-align: left; padding: 2px 6px; font-size: 12.5px; color: var(--ink-soft); cursor: pointer; font-weight: 500; }
+.todo-line[data-on="1"]::before { content: ""; display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--danger); margin-right: 6px; vertical-align: 1px; }
+#agBody h3 { font-size: 12px; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-faint); margin: 14px 0 6px; }
+.ag-list { display: grid; gap: 6px; }
+.ag-item { display: flex; align-items: center; gap: 9px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 10px; background: var(--key); }
+.ag-item.late { border-color: var(--danger); }
+.ag-item.done { opacity: .55; }
+.ag-check { width: 22px; height: 22px; flex: none; border: 1.5px solid var(--line); border-radius: 7px; background: transparent; color: var(--ok); font-size: 14px; cursor: pointer; line-height: 1; }
+.ag-item.done .ag-check { border-color: var(--ok); }
+.ag-when { flex: none; font-size: 12px; color: var(--ink-faint); font-variant-numeric: tabular-nums; min-width: 54px; }
+.ag-what { flex: 1; min-width: 0; font-size: 14px; }
+.ag-what small { display: block; font-size: 11.5px; color: var(--ink-faint); }
+.ag-x { flex: none; border: 0; background: transparent; color: var(--ink-faint); font-size: 18px; cursor: pointer; line-height: 1; padding: 0 2px; }
+.ag-empty { color: var(--ink-faint); font-size: 13.5px; margin: 2px 0; }
+.ag-weeks { display: grid; gap: 8px; }
+.ag-week { display: grid; gap: 3px; }
+.ag-wlab { font-size: 12px; color: var(--ink-soft); }
+.ag-days { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+.ag-day { display: grid; gap: 1px; padding: 5px 0; border: 1px solid var(--line); border-radius: 9px; background: var(--key); color: var(--key-ink); font: inherit; font-size: 14px; font-variant-numeric: tabular-nums; cursor: pointer; }
+.ag-day small { font-size: 10px; color: var(--ink-faint); }
+.ag-day.now { border-color: var(--accent); }
+.ag-day.has { background: var(--accent-soft); }
+.ag-day.sel { background: var(--accent); color: var(--accent-ink); }
+.ag-day.sel small { color: var(--accent-ink); }
+.ag-add { margin-top: 10px; display: grid; gap: 6px; font-size: 13.5px; }
+.ag-addrow { display: flex; gap: 6px; }
+.ag-addrow input { flex: 1; min-width: 0; font: inherit; font-size: 14px; padding: 9px 10px; border: 1px solid var(--line); border-radius: 9px; background: var(--edit-bg); color: var(--ink); }
+.ag-addrow button, .todo-pop-foot button { font: inherit; font-size: 14px; padding: 9px 14px; border: 0; border-radius: 9px; background: var(--accent); color: var(--accent-ink); cursor: pointer; }
+.ag-note { font-size: 12px; color: var(--ink-faint); margin-top: 14px; }
+.todo-pop { position: fixed; left: 50%; top: 14%; transform: translateX(-50%); z-index: 60; width: min(420px, calc(100vw - 32px)); background: var(--chrome); border: 1px solid var(--line); border-radius: 14px; box-shadow: var(--shadow); padding: 14px; display: grid; gap: 8px; }
+.todo-pop h3 { margin: 0 0 2px; font-size: 15px; }
+.todo-pop-foot { display: flex; justify-content: flex-end; }
 </style>
 <style>:root{padding-top:0}body{padding-left:env(safe-area-inset-left,0px);padding-right:env(safe-area-inset-right,0px)}</style>
 </head>
@@ -351,6 +420,7 @@ strong { font-weight: 650; }
     <div class="side-foot">
       <div class="save-state" id="saveState" data-s="local"><i></i><span>Sur cet appareil</span></div>
       <button type="button" class="acct-line" id="acctLine" hidden>Compte : non connecté</button>
+      <button type="button" class="todo-line" id="todoLine" hidden>Travail à faire : rien</button>
       <button type="button" class="backup-line" id="backupLine">Dernière sauvegarde dans Fichiers : jamais</button>
     </div>
   </aside>
@@ -407,6 +477,23 @@ strong { font-weight: 650; }
       </div>
       <textarea class="src" id="src" rows="1" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" aria-label="Ligne en cours d'écriture"></textarea>
       <div class="live" id="live" aria-label="Aperçu"></div>
+      <div class="figbar" id="figbar" hidden>
+        <button type="button" id="penG" class="k pen" aria-pressed="false" title="Tracé guidé : droites et arcs redressés">✐ Guidé</button>
+        <button type="button" id="penF" class="k pen" aria-pressed="false" title="Tracé libre">✎ Libre</button>
+        <button type="button" id="penT" class="k pen" aria-pressed="false" title="Poser un nom (M, K, vec(e_r)…)">T Nom</button>
+        <button type="button" id="figArrow" class="k tgl" aria-pressed="false" title="Mettre une flèche au bout">→</button>
+        <button type="button" id="figDash" class="k tgl" aria-pressed="false" title="Trait en pointillés">- -</button>
+        <span class="ink" id="figInk" aria-hidden="true"></span>
+        <input id="figLab" class="figlab" type="text" autocomplete="off" autocorrect="off" spellcheck="false" placeholder="Nom / légende : theta, vec(e_r), delta t…" aria-label="Légende du dernier tracé">
+        <button type="button" id="figUndo" class="k" title="Annuler le dernier tracé">↶</button>
+        <button type="button" id="figClear" class="k" title="Tout effacer">Effacer</button>
+        <button type="button" id="figDel" class="k danger" title="Supprimer le repère">Supprimer</button>
+      </div>
+      <div class="figpick" id="figPick" hidden>
+        <button type="button" data-k="circ">Circulaire (3D)</button>
+        <button type="button" data-k="pol">Polaire (ρ, z)</button>
+        <button type="button" data-k="cart">Cartésien (x, y)</button>
+      </div>
       <div class="kb" id="kb"></div>
     </div>
   </main>
@@ -427,6 +514,18 @@ strong { font-weight: 650; }
   </header>
   <div class="body" id="acctBody"></div>
 </section>
+<section class="panel" id="agenda" hidden aria-labelledby="agTitle">
+  <header>
+    <h2 id="agTitle">Travail à faire</h2>
+    <button class="tbtn" id="agClose" type="button">Fermer</button>
+  </header>
+  <div class="body" id="agBody"></div>
+</section>
+<div class="todo-pop" id="todoPop" hidden role="dialog" aria-labelledby="todoPopT">
+  <h3 id="todoPopT">À faire d’ici peu</h3>
+  <div id="todoPopList"></div>
+  <div class="todo-pop-foot"><button type="button" id="todoLater">Fermer</button></div>
+</div>
 <div class="toast" id="toast" hidden role="status"></div>
 <input type="file" id="importFile" accept=".json,.txt,.md,application/json,text/plain" hidden>
 
@@ -825,6 +924,12 @@ P.placeholder = function (v) {
   var cm = v.caret ? MARK_TEX : '';
   if (v.type === 'ce') return { tex: '\\ce{' + cleanCe(v.raw) + '}' + cm, k: 'ord' };
   if (v.type === 'txt') return { tex: CF.inlineTex(v.raw), k: 'text' };   // double espace dans une parenthèse
+  if (v.type === 'fmt') {                                                 // **gras**, __souligné__, [rouge:…]
+    var body = CF.inlineTex(v.raw);
+    if (v.style === 'b') return { tex: '\\boldsymbol{' + body + '}', k: 'ord' };
+    if (v.style === 'u') return { tex: '\\underline{' + body + '}', k: 'ord' };
+    return { tex: '\\textcolor{' + (v.color || '#14161c') + '}{' + body + '}', k: 'ord' };
+  }
   var inner = new Parser(tokenize(v.raw, []), { label: 'ket' });
   return { tex: '\\mathrm{' + join(inner.parseAll()) + '}' + cm, k: 'ord' };
 };
@@ -1138,6 +1243,274 @@ CF.mathTex = function (src, ph) { return join(CF.parseMath(src, ph)); };
 })(typeof CF !== 'undefined' ? CF : require('./engine-dict.js'));
 if (typeof module === 'object' && module.exports) module.exports = (typeof CF !== 'undefined' ? CF : require('./engine-dict.js'));
 
+/* NoteSci — repères (circulaire 3D, polaire ρz, cartésien xy) et tracés au doigt */
+(function (CF) {
+'use strict';
+
+/* un modèle = une taille de dessin + la place de l'origine */
+var KINDS = {
+  circ: { W: 300, H: 180, ox: 108, oy: 128, name: 'circulaire' },   // perspective 3D
+  pol:  { W: 240, H: 180, ox: 42, oy: 156, name: 'polaire' },       // plan (ρ, z)
+  cart: { W: 240, H: 180, ox: 42, oy: 156, name: 'cartésien' }      // plan (x, y)
+};
+CF.FIG = KINDS;
+CF.figGeo = function (k) { return KINDS[k] || KINDS.cart; };
+
+/* ---------- ligne du cahier <-> données ---------- */
+CF.figParse = function (line) {
+  var m = /^@fig\s+(\{[\s\S]*\})\s*$/.exec(String(line).replace(//g, ''));
+  if (!m) return null;
+  try {
+    var d = JSON.parse(m[1]);
+    if (!d || !KINDS[d.k]) return null;
+    d.d = Array.isArray(d.d) ? d.d : [];
+    return d;
+  } catch (e) { return null; }
+};
+CF.figLine = function (d) { return '@fig ' + JSON.stringify({ k: d.k, d: d.d || [] }); };
+CF.isFig = function (line) { return /^@fig\s+\{/.test(String(line).replace(//g, '')); };
+
+/* ---------- légendes : grec, indices, flèche de vecteur ---------- */
+var GR = { alpha: 'α', beta: 'β', gamma: 'γ', delta: 'δ', epsilon: 'ε', zeta: 'ζ', eta: 'η', theta: 'θ', kappa: 'κ', lambda: 'λ', mu: 'µ', nu: 'ν', xi: 'ξ', rho: 'ρ', pi: 'π', sigma: 'σ', tau: 'τ', phi: 'φ', chi: 'χ', psi: 'ψ', omega: 'ω', Gamma: 'Γ', Delta: 'Δ', Theta: 'Θ', Lambda: 'Λ', Xi: 'Ξ', Pi: 'Π', Sigma: 'Σ', Phi: 'Φ', Psi: 'Ψ', Omega: 'Ω' };
+function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+CF.figEsc = esc;
+
+function piece(str) {                     // lettres + indices : e_r, theta_1
+  return esc(String(str)).replace(/_\(?([^()\s]{1,6})\)?/g, function (m, sub) {
+    return '<tspan font-size="8.5" dy="2.5">' + sub + '</tspan><tspan dy="-2.5"></tspan>';
+  });
+}
+function greek(t) { return String(t).replace(/[A-Za-z]+/g, function (w) { return GR[w] || w; }); }
+function labelSVG(txt) {
+  return piece(greek(String(txt).replace(/\bvec\(([^()]{1,8})\)/g, '$1')));
+}
+/* largeur approchée du nom, pour centrer la flèche de vecteur */
+function labelWidth(txt) {
+  var t = greek(String(txt).replace(/\bvec\(([^()]{1,8})\)/g, '$1'));
+  var subs = (t.match(/_\(?[^()\s]{1,6}\)?/g) || []).join('').replace(/[_()]/g, '').length;
+  var base = t.replace(/_\(?[^()\s]{1,6}\)?/g, '').length;
+  return base * 5.9 + subs * 4;
+}
+CF.figLabelSVG = labelSVG;
+
+/* ---------- fond : les trois modèles, épurés ---------- */
+function markerId(c) { return 'fgA' + String(c).replace(/[^a-zA-Z0-9]/g, ''); }
+function arrowDefs(colors) {
+  var seen = {}, out = '';
+  ['currentColor'].concat(colors || []).forEach(function (c) {
+    var id = markerId(c);
+    if (seen[id]) return;
+    seen[id] = 1;
+    out += '<marker id="' + id + '" viewBox="0 0 8 8" refX="6.6" refY="4" markerWidth="6" markerHeight="6" orient="auto">' +
+      '<path d="M0 .6 L8 4 L0 7.4 z" fill="' + esc(c) + '"/></marker>' +
+      '<marker id="v' + id + '" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="4" markerHeight="4" orient="auto">' +
+      '<path d="M0 1 L8 4 L0 7 z" fill="' + esc(c) + '"/></marker>';
+  });
+  return '<defs>' + out + '</defs>';
+}
+function axis(x1, y1, x2, y2) {
+  return '<path d="M' + x1 + ' ' + y1 + 'L' + x2 + ' ' + y2 + '" marker-end="url(#fgAcurrentColor)"/>';
+}
+function tx(x, y, s, anchor) {
+  return '<text class="fg-t" x="' + x + '" y="' + y + '"' + (anchor ? ' text-anchor="' + anchor + '"' : '') + '>' + s + '</text>';
+}
+
+var LEN = 136;                            // axes de même longueur
+function backSVG(k) {
+  var g = CF.figGeo(k), ox = g.ox, oy = g.oy;
+  if (k === 'circ') {
+    return '<g class="fg-ax">' + axis(ox, oy, ox, 20) + axis(ox, oy, 256, 150) + axis(ox, oy, 32, 168) + '</g>' +
+      tx(ox - 14, 22, 'z') + tx(262, 155, 'y') + tx(22, 174, 'x') + tx(ox - 14, oy + 14, 'O');
+  }
+  return '<g class="fg-ax">' + axis(ox, oy, ox + LEN, oy) + axis(ox, oy, ox, oy - LEN) + '</g>' +
+    tx(ox + LEN + 10, oy + 5, k === 'pol' ? 'ρ' : 'x') +
+    tx(ox - 15, oy - LEN - 3, k === 'pol' ? 'z' : 'y') +
+    tx(ox - 14, oy + 14, 'O');
+}
+
+/* ---------- tracés ---------- */
+function P(x, y) { return (+x).toFixed(1) + ' ' + (+y).toFixed(1); }
+
+function strokePath(s) {
+  if (s.t === 'l') return 'M' + P(s.p[0], s.p[1]) + 'L' + P(s.p[2], s.p[3]);
+  if (s.t === 'a') {
+    var cx = s.p[0], cy = s.p[1], r = s.p[2], a1 = s.p[3], a2 = s.p[4];
+    var x1 = cx + r * Math.cos(a1), y1 = cy - r * Math.sin(a1);
+    var x2 = cx + r * Math.cos(a2), y2 = cy - r * Math.sin(a2);
+    var large = Math.abs(a2 - a1) > Math.PI ? 1 : 0;
+    var sweep = a2 > a1 ? 0 : 1;
+    return 'M' + P(x1, y1) + 'A' + r.toFixed(1) + ' ' + r.toFixed(1) + ' 0 ' + large + ' ' + sweep + ' ' + P(x2, y2);
+  }
+  var d = 'M' + P(s.p[0], s.p[1]);
+  for (var i = 2; i < s.p.length; i += 2) d += 'L' + P(s.p[i], s.p[i + 1]);
+  return d;
+}
+CF.figStrokePath = strokePath;
+
+function labelPos(s) {
+  if (s.t === 'x') return { x: s.p[0], y: s.p[1], rot: 0, anchor: 'middle' };
+  if (s.t === 'a') {
+    var am = (s.p[3] + s.p[4]) / 2, rr = s.p[2] + 13;
+    return { x: s.p[0] + rr * Math.cos(am), y: s.p[1] - rr * Math.sin(am) + 3.5, rot: 0, anchor: 'middle' };
+  }
+  var x1 = s.p[0], y1 = s.p[1], x2, y2;
+  if (s.t === 'l') { x2 = s.p[2]; y2 = s.p[3]; } else { x2 = s.p[s.p.length - 2]; y2 = s.p[s.p.length - 1]; }
+  var mx = (x1 + x2) / 2, my = (y1 + y2) / 2;
+  var rot = Math.atan2(y2 - y1, x2 - x1) * 180 / Math.PI;
+  if (rot > 90) rot -= 180; else if (rot < -90) rot += 180;
+  return { x: mx, y: my - 6, rot: rot, anchor: 'middle' };
+}
+
+function strokeSVG(s, i) {
+  var c = s.c && s.c !== '#14161c' ? s.c : 'currentColor';
+  var out = '';
+  if (s.t !== 'x') {
+    out += '<path class="fg-s' + (s.t === 'f' ? ' fg-free' : '') + (s.ds ? ' fg-dash' : '') + '" data-i="' + i +
+      '" d="' + strokePath(s) + '" stroke="' + esc(c) + '"' +
+      (s.ar ? ' marker-end="url(#' + markerId(c) + ')"' : '') + '/>';
+  }
+  if (s.w) {
+    var lp = labelPos(s), lx = +lp.x.toFixed(1), ly = +lp.y.toFixed(1);
+    var inner = '<text class="fg-lab" x="' + lx + '" y="' + ly + '" fill="' + esc(c) + '" text-anchor="' + lp.anchor + '">' + labelSVG(s.w) + '</text>';
+    if (/\bvec\(/.test(s.w)) {                       // flèche de vecteur au-dessus du nom
+      var lw = Math.max(7, labelWidth(s.w));
+      inner += '<path class="fg-va" d="M' + (lx - lw / 2).toFixed(1) + ' ' + (ly - 10.5).toFixed(1) + 'h' + lw.toFixed(1) +
+        '" stroke="' + esc(c) + '" marker-end="url(#v' + markerId(c) + ')"/>';
+    }
+    out += lp.rot ? '<g transform="rotate(' + lp.rot.toFixed(1) + ' ' + lx + ' ' + ly + ')">' + inner + '</g>' : inner;
+  } else if (s.t === 'x') {
+    out += '<circle class="fg-pt" cx="' + s.p[0] + '" cy="' + s.p[1] + '" r="1.8" fill="' + esc(c) + '"/>';
+  }
+  return out;
+}
+
+CF.figSVG = function (data, idx) {
+  var g = CF.figGeo(data.k);
+  var cols = (data.d || []).filter(function (s) { return s.ar || /\bvec\(/.test(s.w || ''); })
+    .map(function (s) { return s.c && s.c !== '#14161c' ? s.c : 'currentColor'; });
+  return '<svg class="fig" viewBox="0 0 ' + g.W + ' ' + g.H + '" width="' + g.W + '" height="' + g.H + '"' +
+    (idx == null ? '' : ' data-line="' + idx + '"') + ' role="img" aria-label="Repère ' + g.name + '">' +
+    arrowDefs(cols) + backSVG(data.k) + (data.d || []).map(strokeSVG).join('') + '<path class="fg-live" d=""/></svg>';
+};
+
+/* ---------- du geste au tracé propre ---------- */
+function dist(x1, y1, x2, y2) { return Math.hypot(x2 - x1, y2 - y1); }
+
+function simplify(pts, tol) {
+  if (pts.length < 3) return pts.slice();
+  var out = [pts[0]], last = pts[0];
+  for (var i = 1; i < pts.length - 1; i++) {
+    if (dist(last[0], last[1], pts[i][0], pts[i][1]) >= tol) { out.push(pts[i]); last = pts[i]; }
+  }
+  out.push(pts[pts.length - 1]);
+  return out;
+}
+
+/* cercle des moindres carrés (Kåsa) */
+function circleFit(pts) {
+  var n = pts.length, sx = 0, sy = 0;
+  pts.forEach(function (p) { sx += p[0]; sy += p[1]; });
+  var mx = sx / n, my = sy / n, suu = 0, svv = 0, suv = 0, suuu = 0, svvv = 0, suvv = 0, svuu = 0;
+  pts.forEach(function (p) {
+    var u = p[0] - mx, v = p[1] - my;
+    suu += u * u; svv += v * v; suv += u * v;
+    suuu += u * u * u; svvv += v * v * v; suvv += u * v * v; svuu += v * u * u;
+  });
+  var den = 2 * (suu * svv - suv * suv);
+  if (!den) return null;
+  var uc = (svv * (suuu + suvv) - suv * (svvv + svuu)) / den;
+  var vc = (suu * (svvv + svuu) - suv * (suuu + suvv)) / den;
+  var cx = mx + uc, cy = my + vc, r = 0;
+  pts.forEach(function (p) { r += dist(p[0], p[1], cx, cy); });
+  return { x: cx, y: cy, r: r / n };
+}
+
+/* geste -> tracé. opt : { kind, ar, ds, points } */
+CF.figFit = function (pts, guided, color, opt) {
+  opt = opt || {};
+  var g = CF.figGeo(opt.kind), OX = g.ox, OY = g.oy, i;
+  pts = (pts || []).filter(function (p) { return p && isFinite(p[0]) && isFinite(p[1]); });
+  if (pts.length < 2) return null;
+  var a = pts[0], b = pts[pts.length - 1];
+  var len = 0;
+  for (i = 1; i < pts.length; i++) len += dist(pts[i - 1][0], pts[i - 1][1], pts[i][0], pts[i][1]);
+  var chord = dist(a[0], a[1], b[0], b[1]);
+  if (len < 6) return null;
+
+  if (!guided) {
+    var sp = simplify(pts, 2.2), flat = [];
+    sp.forEach(function (p) { flat.push(Math.round(p[0] * 10) / 10, Math.round(p[1] * 10) / 10); });
+    var fs = { t: 'f', p: flat, c: color };
+    if (opt.ar) fs.ar = 1;
+    if (opt.ds) fs.ds = 1;
+    return fs;
+  }
+
+  // assez courbé ? on tente l'arc de cercle
+  var lineErr = 0;
+  var ux = (b[0] - a[0]) / (chord || 1), uy = (b[1] - a[1]) / (chord || 1);
+  pts.forEach(function (p) { lineErr = Math.max(lineErr, Math.abs((p[0] - a[0]) * uy - (p[1] - a[1]) * ux)); });
+  if (lineErr > 3.5 && pts.length > 4) {
+    var cf = circleFit(pts);
+    if (cf && cf.r > 9 && cf.r < 400) {
+      var arcErr = 0;
+      pts.forEach(function (p) { arcErr = Math.max(arcErr, Math.abs(dist(p[0], p[1], cf.x, cf.y) - cf.r)); });
+      var cx = cf.x, cy = cf.y;
+      if (dist(cx, cy, OX, OY) < 16) { cx = OX; cy = OY; }     // centré sur l'origine
+      else (opt.points || []).forEach(function (q) { if (dist(cx, cy, q[0], q[1]) < 12) { cx = q[0]; cy = q[1]; } });
+      var r = (dist(a[0], a[1], cx, cy) + dist(b[0], b[1], cx, cy)) / 2;
+      var a1 = Math.atan2(cy - a[1], a[0] - cx), a2 = Math.atan2(cy - b[1], b[0] - cx);
+      var mid = pts[Math.floor(pts.length / 2)];
+      var am = Math.atan2(cy - mid[1], mid[0] - cx);
+      var norm = function (x) { return (x % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI); };
+      var d1 = norm(a2 - a1), dm = norm(am - a1);
+      a2 = dm > d1 ? a1 - norm(a1 - a2) : a1 + d1;
+      if (arcErr < 0.16 * r && Math.abs(a2 - a1) > 0.18) {
+        var as = { t: 'a', p: [Math.round(cx * 10) / 10, Math.round(cy * 10) / 10, Math.round(r * 10) / 10, +a1.toFixed(3), +a2.toFixed(3)], c: color };
+        if (opt.ds) as.ds = 1;
+        return as;
+      }
+    }
+  }
+
+  // segment redressé, accroché aux axes / à l'origine / aux tracés déjà là
+  var x1 = a[0], y1 = a[1], x2 = b[0], y2 = b[1];
+  var ang = Math.atan2(y2 - y1, x2 - x1) * 180 / Math.PI;
+  if (Math.abs(ang) < 6 || Math.abs(Math.abs(ang) - 180) < 6) { y1 = y2 = (y1 + y2) / 2; }
+  else if (Math.abs(Math.abs(ang) - 90) < 6) { x1 = x2 = (x1 + x2) / 2; }
+  function snap(x, y) {
+    if (dist(x, y, OX, OY) < 12) return [OX, OY];
+    var best = null, bd = 9;
+    (opt.points || []).forEach(function (q) {
+      var d = dist(x, y, q[0], q[1]);
+      if (d < bd) { bd = d; best = q; }
+    });
+    if (best) return [best[0], best[1]];
+    if (Math.abs(y - OY) < 6) return [x, OY];
+    if (Math.abs(x - OX) < 6) return [OX, y];
+    return [x, y];
+  }
+  var s1 = snap(x1, y1), s2 = snap(x2, y2);
+  var st = { t: 'l', p: [Math.round(s1[0] * 10) / 10, Math.round(s1[1] * 10) / 10, Math.round(s2[0] * 10) / 10, Math.round(s2[1] * 10) / 10], c: color };
+  if (opt.ar) st.ar = 1;
+  if (opt.ds) st.ds = 1;
+  return st;
+};
+
+/* points déjà posés : l'origine, les bouts de tracés, les points nommés */
+CF.figPoints = function (data) {
+  var g = CF.figGeo(data && data.k), out = [[g.ox, g.oy]];
+  ((data && data.d) || []).forEach(function (s) {
+    if (s.t === 'l') out.push([s.p[0], s.p[1]], [s.p[2], s.p[3]]);
+    else if (s.t === 'x') out.push([s.p[0], s.p[1]]);
+    else if (s.t === 'f') out.push([s.p[0], s.p[1]], [s.p[s.p.length - 2], s.p[s.p.length - 1]]);
+  });
+  return out;
+};
+
+})(typeof CF !== 'undefined' ? CF : require('./engine-dict.js'));
+if (typeof module === 'object' && module.exports) module.exports = (typeof CF !== 'undefined' ? CF : require('./engine-dict.js'));
+
 /* Cahier de Formules — découpage texte / formules, lignes, blocs */
 (function (CF) {
 'use strict';
@@ -1145,6 +1518,27 @@ if (typeof module === 'object' && module.exports) module.exports = (typeof CF !=
 var ACCENT = /[À-ÖØ-öø-ÿŒœÆæ]/;
 var MARK_RE = /\uE010/g;
 var MATH_CH = /[=+*\/^_<>\\|≈≃∼≡∝≠≤≥⩽⩾≪≫∈∉⊂⊃⊥∥⇔⟺⇒⟹⇐→⟶←↔↦⇌±∓·⋅×÷∧∨∪∩∘∂∞∀∃∅∇ℏℓℝℕℤℚℂ⟨⟩†°∫∬∭∮∯∑∏√∛Α-Ωα-ωϕϵϑµ]/;
+
+/* ---------- mise en forme : **gras**, __souligné__, [rouge:…] ---------- */
+CF.COLORS = { rouge: '#D92B2B', bleu: '#56D6FC', vert: '#16B84E', jaune: '#E09400', violet: '#BE38F3', noir: '#14161c' };
+CF.COLOR_NAMES = Object.keys(CF.COLORS);
+var FMT_RE = /\*\*([^*\n]+)\*\*|__([^_\n]+)__|\[(rouge|bleu|vert|jaune|violet|noir):([^\]\n]*)\]/;
+
+/* découpe un contenu en morceaux { style, color, s } ; style vaut '', 'b', 'u' ou 'c' */
+function fmtRuns(content) {
+  var out = [], rest = String(content), m;
+  while ((m = FMT_RE.exec(rest))) {
+    if (m.index) out.push({ style: '', s: rest.slice(0, m.index) });
+    if (m[1] != null) out.push({ style: 'b', s: m[1] });
+    else if (m[2] != null) out.push({ style: 'u', s: m[2] });
+    else out.push({ style: 'c', color: CF.COLORS[m[3]], s: m[4] });
+    rest = rest.slice(m.index + m[0].length);
+  }
+  if (rest) out.push({ style: '', s: rest });
+  return out.length ? out : [{ style: '', s: '' }];
+}
+CF.fmtRuns = fmtRuns;
+CF.hasFmt = function (content) { return FMT_RE.test(String(content)); };
 
 /* ---------- raccourcis perso ---------- */
 var custom = [];
@@ -1168,9 +1562,17 @@ function normalize(s) {
 CF.normalize = normalize;
 
 /* ce(...) et "..." protégés par des marqueurs */
-function protect(s, ph) {
+function protect(s, ph, fmt) {
   var out = '', i = 0;
   while (i < s.length) {
+    if (fmt) {
+      var fm = FMT_RE.exec(s.slice(i));
+      if (fm && fm.index === 0) {
+        var raw = fm[1] != null ? fm[1] : fm[2] != null ? fm[2] : fm[4];
+        ph.push({ type: 'fmt', style: fm[1] != null ? 'b' : fm[2] != null ? 'u' : 'c', color: CF.COLORS[fm[3]], raw: raw, caret: false, src: fm[0] });
+        out += '\uE000' + (ph.length - 1) + '\uE001'; i += fm[0].length; continue;
+      }
+    }
     var m = /^(ce|chim)\(/.exec(s.slice(i));
     if (m && (i === 0 || !/[A-Za-zÀ-ÿ]/.test(s[i - 1]))) {
       var j = i + m[0].length, d = 1;
@@ -1425,7 +1827,7 @@ function restore(s, ph) {
 }
 
 /* segments d'un contenu de ligne */
-CF.segments = function (line) {
+CF.segments = function (line, opt) {
   var s = normalize(line);
   custom.forEach(function (r) { s = s.replace(r.re, function (m, pre) { return (pre || '') + r.to; }); });
   var out = [];
@@ -1433,7 +1835,7 @@ CF.segments = function (line) {
   pieces.forEach(function (part, idx) {
     if (!part) return;
     var ph = [];
-    var p = protect(part, ph);
+    var p = protect(part, ph, !!(opt && opt.fmt));
     if (idx % 2 === 1 && idx < pieces.length - 1) { out.push({ t: 'math', s: braket(p), ph: ph }); return; }
     // deux espaces (ou plus) coupent la formule : chaque morceau est lu à part
     var bits = splitForced(innerForced(braket(p), ph));
@@ -1469,6 +1871,7 @@ function lineInfo0(line) {
   var c = raw.slice(ind);
   var m;
   if (!c.trim()) return { kind: 'blank', ind: ind, c: '' };
+  if (CF.isFig && CF.isFig(c)) return { kind: 'fig', ind: ind, c: c };
   if (/^(-{3,}|_{3,}|\*{3,})\s*$/.test(c)) return { kind: 'hr', ind: ind, c: '' };
   if ((m = /^(#{1,3})\s+(.*)$/.exec(c))) return { kind: 'h' + m[1].length, ind: ind, c: m[2] };
   if ((m = /^[-*•]\s+(.*)$/.exec(c))) return { kind: 'bullet', ind: ind, c: m[1] };
@@ -1513,7 +1916,7 @@ CF.braceTex = function (infos, sys) {
 
 /* rangée d'alignement : connecteur | membre gauche | relation + membre droit */
 CF.alignRow = function (content) {
-  var segs = CF.segments(content);
+  var segs = CF.segments(content, { fmt: true });
   var st = 'pre', conn = '', lhs = '', rhs = '', rel = false;
   var mathSegs = segs.map(function (sg) {
     if (sg.t === 'text') return null;
@@ -1628,15 +2031,27 @@ function textHTML(s) {
   return h.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>').replace(MARK_RE, '<span class="tcaret"></span>');
 }
 
-CF.inlineHTML = function (content) {
+function plainHTML(content) {
   return CF.segments(content).map(function (sg) {
     if (sg.t === 'text') return textHTML(sg.s);
     return '<span class="m">' + CF.katex(CF.join(CF.parseMath(sg.s, sg.ph)), false) + '</span>';
   }).join('');
+}
+
+CF.inlineHTML = function (content) {
+  var runs = fmtRuns(content);
+  if (runs.length === 1 && !runs[0].style) return plainHTML(content);
+  return runs.map(function (r) {
+    var h = r.style ? CF.inlineHTML(r.s) : plainHTML(r.s);
+    if (r.style === 'b') return '<strong>' + h + '</strong>';
+    if (r.style === 'u') return '<u>' + h + '</u>';
+    if (r.style === 'c') return '<span class="fc" style="color:' + r.color + '">' + h + '</span>';
+    return h;
+  }).join('');
 };
 
 CF.inlineTex = function (content) {
-  return CF.segments(content).map(function (sg) {
+  return CF.segments(content, { fmt: true }).map(function (sg) {
     if (sg.t === 'text') return textTex(sg.s.replace(/'/g, '\u2019'));
     return CF.join(CF.parseMath(sg.s, sg.ph));
   }).join(' ');
@@ -1648,6 +2063,7 @@ function lineHTML(info, idx) {
   switch (info.kind) {
     case 'blank': return '<div class="ln blank"' + at + '>' + (info.caret ? '<span class="tcaret"></span>' : '') + '</div>';
     case 'hr': return '<div class="ln hrl"' + at + '><hr></div>';
+    case 'fig': return '<div class="ln figln"' + at + '>' + CF.figSVG(CF.figParse(info.c) || { k: 'cart', d: [] }, idx) + '</div>';
     case 'h1': case 'h2': case 'h3':
       return '<div class="ln ' + info.kind + '"' + at + st + '>' + CF.inlineHTML(info.c) + '</div>';
     case 'bullet':
@@ -1733,7 +2149,7 @@ A.DEMO = [
 
 A.state = {
   notes: [], cur: null, lines: [], edit: -1, mode: 'rendu',
-  settings: { custom: [], deleted: [], updated: 0 }
+  settings: { custom: [], deleted: [], todos: [], updated: 0 }
 };
 var S = A.state;
 
@@ -1767,7 +2183,7 @@ A.ensureFolders = function () {
 A.backupData = function () {
   return JSON.stringify({
     app: 'cahier-de-formules', version: 1, exported: A.now(),
-    folders: S.settings.folders, custom: S.settings.custom,
+    folders: S.settings.folders, custom: S.settings.custom, todos: S.settings.todos || [],
     notes: S.notes.map(function (n) { return { id: n.id, title: n.title, body: n.body, folder: n.folder, created: n.created || 0, updated: n.updated || 0 }; })
   }, null, 1);
 };
@@ -1779,6 +2195,9 @@ A.importBackup = function (obj) {
   var have = {};
   (S.settings.custom || []).forEach(function (r) { have[r.from] = 1; });
   (obj.custom || []).forEach(function (r) { if (r && r.from && !have[r.from]) S.settings.custom.push({ from: r.from, to: r.to || '' }); });
+  var hasTd = {};
+  (S.settings.todos || []).forEach(function (r) { hasTd[r.id] = 1; });
+  (obj.todos || []).forEach(function (r) { if (r && r.id && !hasTd[r.id]) S.settings.todos.push(r); });
   (obj.notes || []).forEach(function (r) {
     if (!r || !r.id) return;
     S.settings.deleted = S.settings.deleted.filter(function (x) { return x !== r.id; });
@@ -1836,13 +2255,14 @@ A.loadInitial = function () {
   S.notes.forEach(function (n) { if (n.id === DEMO_ID && !n.updated) n.body = A.DEMO; });
   if (!S.settings.custom) S.settings.custom = [];
   if (!S.settings.deleted) S.settings.deleted = [];
+  if (!S.settings.todos) S.settings.todos = [];
   A.ensureFolders();
   if (!S.notes.some(function (n) { return n.id === S.cur; })) S.cur = S.notes[0] && S.notes[0].id;
   writeLocal();
 };
 
 function settingsData() {
-  return { custom: S.settings.custom, deleted: S.settings.deleted, folders: S.settings.folders, updated: S.settings.updated };
+  return { custom: S.settings.custom, deleted: S.settings.deleted, todos: S.settings.todos || [], folders: S.settings.folders, updated: S.settings.updated };
 }
 function docData(n) { return { title: n.title, body: n.body, folder: n.folder || '', created: n.created || 0, updated: n.updated || 0 }; }
 
@@ -1960,6 +2380,7 @@ function merge(snap, opt) {
     S.settings.deleted = del;
     if (settingsNewer) {
       S.settings.custom = remoteSettings.custom || [];
+      S.settings.todos = remoteSettings.todos || [];
       S.settings.updated = remoteSettings.updated;
       changed = true;
     }
@@ -2187,6 +2608,7 @@ A.refreshCurrent = function () {
   renderDoc();
 };
 
+A.touch = function () { touch(); };
 function touch() {
   var n = curNote();
   if (!n) return;
@@ -2246,6 +2668,7 @@ function renderDoc() {
     kids[j].classList.toggle('editing', S.edit >= b.start && S.edit < b.end);
   });
   editor.hidden = S.edit < 0;
+  if (A.figRefresh) A.figRefresh();
 }
 A.renderDoc = renderDoc;
 
@@ -2279,6 +2702,7 @@ function autoGrowAll() {
 }
 
 /* ---------- édition d'une ligne ---------- */
+A.commit = function () { commit(); };
 function commit() {
   if (S.edit >= 0 && S.edit < S.lines.length && S.lines[S.edit] !== ta.value) {
     S.lines[S.edit] = ta.value;
@@ -2300,6 +2724,7 @@ function startEdit(idx, caret) {
   var pos = caret == null ? ta.value.length : Math.min(caret, ta.value.length);
   ta.setSelectionRange(pos, pos);
   updateLive();
+  if (A.figRefresh) A.figRefresh();
   reveal();
 }
 A.startEdit = startEdit;
@@ -2440,7 +2865,12 @@ function insert(tpl, word) {
   var sel = v.slice(s, e);
   if (word && s > 0 && /[A-Za-z0-9)\]]/.test(v[s - 1])) { text = ' ' + text; if (i >= 0) i++; }
   var caret;
-  if (sel && i >= 0) { text = text.slice(0, i) + sel + text.slice(i); caret = s + i + sel.length; }
+  if (sel && i >= 0) {
+    var lead = /^\s*/.exec(sel)[0], trail = /\s*$/.exec(sel)[0];
+    var core = sel.slice(lead.length, sel.length - trail.length);
+    if (core) { text = lead + text.slice(0, i) + core + text.slice(i) + trail; caret = s + lead.length + i + core.length; }
+    else { text = text.slice(0, i) + sel + text.slice(i); caret = s + i + sel.length; }
+  }
   else caret = s + (i >= 0 ? i : text.length);
   ta.focus({ preventScroll: true });
   ta.setSelectionRange(s, e);
@@ -2451,6 +2881,38 @@ function insert(tpl, word) {
   onInput();
 }
 A.insert = insert;
+
+/* remplace toute la ligne en cours (annulation possible par l'éditeur) */
+A.setLine = function (nv, caret) { setLine(nv, caret); };
+function setLine(nv, caret) {
+  var v = ta.value;
+  ta.focus({ preventScroll: true });
+  ta.setSelectionRange(0, v.length);
+  var ok = false;
+  try { ok = document.execCommand && document.execCommand('insertText', false, nv); } catch (err) { ok = false; }
+  if (!ok || ta.value !== nv) { ta.value = nv; }
+  var c = Math.max(0, Math.min(nv.length, caret));
+  ta.setSelectionRange(c, c);
+  onInput();
+}
+
+/* le bouton noir enlève la couleur autour de la sélection */
+function uncolor() {
+  if (S.edit < 0) return;
+  var v = ta.value, s = ta.selectionStart, e = ta.selectionEnd;
+  var re = /\[(rouge|bleu|vert|jaune|violet|noir):([^\]\n]*)\]/g, m, hits = [];
+  while ((m = re.exec(v))) {
+    var a = m.index, b = a + m[0].length;
+    if (e >= a && s <= b) hits.push({ a: a, b: b, inner: m[2] });
+  }
+  if (!hits.length) { A.toast('Rien de coloré ici'); return; }
+  var nv = v, shift = 0;
+  hits.forEach(function (h) {
+    nv = nv.slice(0, h.a - shift) + h.inner + nv.slice(h.b - shift);
+    shift += (h.b - h.a) - h.inner.length;
+  });
+  setLine(nv, Math.max(0, e - shift));
+}
 
 function nextSlot() {
   var v = ta.value, s = ta.selectionEnd;
@@ -2514,31 +2976,52 @@ function texLabel(tex) {
   return s;
 }
 
+function swatch(name) {
+  var c = CF.COLORS[name];
+  var dot = document.createElement('span'); dot.className = 'dot'; dot.style.background = c;
+  var b = key(dot, 'col', function () {
+    if (A.figActive && A.figActive()) { A.figPenColor(name === 'noir' ? '#14161c' : c); return; }
+    if (name === 'noir') uncolor(); else insert('[' + name + ':¦]', false);
+  }, name === 'noir' ? 'Enlever la couleur (ou stylo noir)' : 'Mettre en ' + name);
+  return b;
+}
+
 function buildKeys() {
   var kb = $('kb');
   var r1 = document.createElement('div'); r1.className = 'row';
+  r1.appendChild(key('B', 'fmt b', function () { insert('**¦**', false); }, 'Gras (sur la sélection)'));
+  r1.appendChild(key('U', 'fmt u', function () { insert('__¦__', false); }, 'Souligner (sur la sélection)'));
+  CF.COLOR_NAMES.forEach(function (n) { r1.appendChild(swatch(n)); });
+  var sp = document.createElement('span'); sp.className = 'sep'; r1.appendChild(sp);
+  r1.appendChild(key('Repère', 'wide', function () { A.figMenu(); }, 'Insérer un repère (cartésien, polaire, circulaire)'));
+  r1.appendChild(key('Agenda', 'wide', function () { A.openAgenda(); }, 'Travail à faire'));
+  var sp1 = document.createElement('span'); sp1.className = 'sep'; r1.appendChild(sp1);
   r1.appendChild(key('◀', 'nav', function () { moveCaret(-1); }, 'Curseur à gauche'));
   r1.appendChild(key('▶', 'nav', function () { moveCaret(1); }, 'Curseur à droite'));
   r1.appendChild(key('Suivant ⇥', 'next', nextSlot, 'Aller à la case suivante'));
   r1.appendChild(key('espace ⎵', 'nav', function () { insert('  ', false); }, 'Espace forcé : sort de la formule (= deux espaces)'));
-  var sp = document.createElement('span'); sp.className = 'sep'; r1.appendChild(sp);
-  STRUCT_KEYS.forEach(function (k) {
-    r1.appendChild(key(texLabel(k[1]), '', function () { insert(k[0], !!k[2]); }, k[3]));
-  });
   var r2 = document.createElement('div'); r2.className = 'row';
   var tabSym = key('≈±', 'tab', function () { fill('sym'); }, 'Symboles');
   var tabGr = key('αβ', 'tab', function () { fill('greek'); }, 'Lettres grecques');
-  r2.appendChild(tabSym); r2.appendChild(tabGr);
+  var tabFn = key('ƒ(x)', 'tab', function () { fill('struct'); }, 'Fractions, racines, intégrales…');
+  r2.appendChild(tabSym); r2.appendChild(tabGr); r2.appendChild(tabFn);
   var sp2 = document.createElement('span'); sp2.className = 'sep'; r2.appendChild(sp2);
   var holder = document.createElement('div'); holder.style.display = 'contents'; r2.appendChild(holder);
   function fill(which) {
     holder.innerHTML = '';
     tabSym.setAttribute('aria-pressed', which === 'sym');
     tabGr.setAttribute('aria-pressed', which === 'greek');
-    (which === 'sym' ? SYM_KEYS : GREEK_KEYS).forEach(function (c) {
-      var ins = c === '\\' ? ' \\ ' : c;
-      holder.appendChild(key(c, '', function () { insert(ins, false); }, c));
-    });
+    tabFn.setAttribute('aria-pressed', which === 'struct');
+    if (which === 'struct') {
+      STRUCT_KEYS.forEach(function (k) {
+        holder.appendChild(key(texLabel(k[1]), '', function () { insert(k[0], !!k[2]); }, k[3]));
+      });
+    } else {
+      (which === 'sym' ? SYM_KEYS : GREEK_KEYS).forEach(function (c) {
+        var ins = c === '\\' ? ' \\ ' : c;
+        holder.appendChild(key(c, '', function () { insert(ins, false); }, c));
+      });
+    }
     r2.scrollLeft = 0;
   }
   fill('sym');
@@ -2588,6 +3071,7 @@ A.init = function () {
   ta = $('src'); linesEl = $('lines'); editor = $('editor'); live = $('live');
   doc = $('doc'); tail = $('tail'); srcAll = $('srcAll'); titleIn = $('title');
   buildKeys();
+  if (A.figInit) A.figInit();
 
   ta.addEventListener('input', onInput);
   document.addEventListener('selectionchange', function () { if (S.edit >= 0 && document.activeElement === ta) scheduleLive(); });
@@ -2598,6 +3082,7 @@ A.init = function () {
     clearTimeout(blurTimer);
     blurTimer = setTimeout(function () {
       if (keepFocus || document.activeElement === ta) return;
+      if (A.figActive && A.figActive()) return;        // repère : le clavier n'est pas utilisé
       stopEdit();
     }, 220);
   });
@@ -2652,6 +3137,376 @@ A.init = function () {
 
 })(APP);
 
+/* NoteSci — repères : insertion, stylos, tracés au doigt */
+(function (A) {
+'use strict';
+var S = A.state;
+var $ = function (id) { return document.getElementById(id); };
+
+var pen = null;            // null | 'g' (guidé) | 'f' (libre) | 't' (texte)
+var arrow = false, dash = false;
+var color = '#14161c';
+var drawing = null;
+
+function figIndex() {
+  return S.edit >= 0 && CF.isFig(S.lines[S.edit] || '') ? S.edit : -1;
+}
+A.figActive = function () { return figIndex() >= 0; };
+A.figPenColor = function (c) { color = c; paintBar(); };
+
+function data() {
+  var i = figIndex();
+  return i < 0 ? null : CF.figParse(S.lines[i]);
+}
+function write(d) {
+  var i = figIndex();
+  if (i < 0) return;
+  S.lines[i] = CF.figLine(d);
+  var ta = $('src');
+  if (ta) ta.value = S.lines[i];
+  A.touch();
+  A.renderDoc();
+}
+
+/* ---------- insertion ---------- */
+A.figMenu = function () {
+  var box = $('figPick');
+  box.hidden = !box.hidden;
+};
+A.figInsert = function (kind) {
+  $('figPick').hidden = true;
+  var line = CF.figLine({ k: kind, d: [] });
+  A.commit();
+  var at = S.edit;
+  if (at < 0) { S.lines.push(line); at = S.lines.length - 1; }
+  else if (!(S.lines[at] || '').trim()) S.lines[at] = line;
+  else { S.lines.splice(at + 1, 0, line); at++; }
+  A.touch();
+  pen = 'g';
+  var ta = $('src');
+  if (ta && S.edit === at) ta.value = S.lines[at];
+  A.startEdit(at);
+  A.toast('Repère ajouté — choisis un stylo et trace avec le doigt');
+};
+
+/* ---------- barre du repère ---------- */
+function paintBar() {
+  var bar = $('figbar'), on = figIndex() >= 0;
+  bar.hidden = !on;
+  $('src').hidden = on;
+  $('live').hidden = on;
+  if (!on) { pen = null; return; }
+  $('penG').setAttribute('aria-pressed', pen === 'g');
+  $('penF').setAttribute('aria-pressed', pen === 'f');
+  $('penT').setAttribute('aria-pressed', pen === 't');
+  $('figArrow').setAttribute('aria-pressed', arrow);
+  $('figDash').setAttribute('aria-pressed', dash);
+  $('figInk').style.background = color;
+  var d = data(), last = d && d.d.length ? d.d[d.d.length - 1] : null;
+  var lab = $('figLab');
+  if (document.activeElement !== lab) lab.value = last && last.w ? last.w : '';
+  lab.disabled = !last;
+  [].forEach.call(document.querySelectorAll('svg.fig'), function (sv) {
+    sv.classList.toggle('drawing', !!pen && +sv.dataset.line === figIndex());
+  });
+}
+A.figRefresh = paintBar;
+
+/* ---------- tracé ---------- */
+function toFig(sv, e) {
+  var r = sv.getBoundingClientRect();
+  var g = CF.figGeo((data() || {}).k);
+  return [(e.clientX - r.left) / r.width * g.W, (e.clientY - r.top) / r.height * g.H];
+}
+
+function onDown(e) {
+  var sv = e.target.closest && e.target.closest('svg.fig');
+  if (!sv || !pen) return;
+  if (+sv.dataset.line !== figIndex()) return;
+  e.preventDefault(); e.stopPropagation();
+  if (pen === 't') { placeText(toFig(sv, e)); return; }
+  drawing = { sv: sv, pts: [toFig(sv, e)], id: e.pointerId };
+  try { sv.setPointerCapture(e.pointerId); } catch (err) { /* souris */ }
+}
+function onMove(e) {
+  if (!drawing || e.pointerId !== drawing.id) return;
+  e.preventDefault();
+  drawing.pts.push(toFig(drawing.sv, e));
+  var live = drawing.sv.querySelector('.fg-live');
+  if (live) live.setAttribute('d', CF.figStrokePath({ t: 'f', p: [].concat.apply([], drawing.pts) }));
+}
+function onUp(e) {
+  if (!drawing || (e.pointerId != null && e.pointerId !== drawing.id)) return;
+  var pts = drawing.pts, sv = drawing.sv;
+  drawing = null;
+  var live = sv.querySelector('.fg-live');
+  if (live) live.setAttribute('d', '');
+  var d = data();
+  if (!d) return;
+  var st = CF.figFit(pts, pen === 'g', color, { kind: d.k, ar: arrow, ds: dash, points: CF.figPoints(d) });
+  if (!st) return;
+  d.d.push(st);
+  write(d);
+  paintBar();
+  if (pen === 'g') $('figLab').focus({ preventScroll: true });
+}
+
+function placeText(pt) {
+  var d = data();
+  if (!d) return;
+  d.d.push({ t: 'x', p: [Math.round(pt[0] * 10) / 10, Math.round(pt[1] * 10) / 10], c: color, w: '' });
+  write(d);
+  paintBar();
+  var lab = $('figLab');
+  lab.value = '';
+  lab.focus({ preventScroll: true });
+}
+
+A.figInit = function () {
+  var lines = $('lines');
+  lines.addEventListener('pointerdown', onDown);
+  lines.addEventListener('pointermove', onMove);
+  lines.addEventListener('pointerup', onUp);
+  lines.addEventListener('pointercancel', onUp);
+  lines.addEventListener('pointerleave', function (e) { if (drawing) onUp(e); });
+
+  [].forEach.call(document.querySelectorAll('#figPick button'), function (b) {
+    b.addEventListener('click', function () { A.figInsert(b.dataset.k); });
+  });
+  function tool(id, fn) {
+    var b = $(id);
+    b.addEventListener('pointerdown', function (e) { e.preventDefault(); });
+    b.addEventListener('click', fn);
+  }
+  tool('penG', function () { pen = pen === 'g' ? null : 'g'; paintBar(); });
+  tool('penF', function () { pen = pen === 'f' ? null : 'f'; paintBar(); });
+  tool('penT', function () {
+    pen = pen === 't' ? null : 't'; paintBar();
+    if (pen === 't') A.toast('Touche le repère à l’endroit du nom (M, K, vec(e_r)…)');
+  });
+  tool('figArrow', function () { arrow = !arrow; paintBar(); });
+  tool('figDash', function () { dash = !dash; paintBar(); });
+  $('figLab').addEventListener('input', function () {
+    var d = data();
+    if (!d || !d.d.length) return;
+    var v = $('figLab').value.trim();
+    if (v) d.d[d.d.length - 1].w = v; else delete d.d[d.d.length - 1].w;
+    write(d);
+  });
+  tool('figUndo', function () {
+    var d = data();
+    if (!d || !d.d.length) { A.toast('Rien à annuler'); return; }
+    d.d.pop(); write(d); paintBar();
+  });
+  tool('figClear', function () {
+    var d = data();
+    if (!d) return;
+    d.d = []; write(d); paintBar();
+  });
+  tool('figDel', function () {
+    var i = figIndex();
+    if (i < 0) return;
+    S.lines.splice(i, 1);
+    if (!S.lines.length) S.lines = [''];
+    A.touch();
+    pen = null;
+    A.startEdit(Math.max(0, i - 1));
+    A.toast('Repère supprimé');
+  });
+};
+
+})(APP);
+
+/* NoteSci — agenda : le travail à faire, par semaines */
+(function (A) {
+'use strict';
+var S = A.state;
+var $ = function (id) { return document.getElementById(id); };
+var WEEKS = 6;
+var pickDay = null;
+
+function todos() {
+  if (!S.settings.todos) S.settings.todos = [];
+  return S.settings.todos;
+}
+function save() { A.saveSettings(); paintCount(); }
+
+/* ---------- dates ---------- */
+function iso(d) {
+  return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2);
+}
+function fromIso(s) { var p = String(s).split('-'); return new Date(+p[0], +p[1] - 1, +p[2]); }
+function today() { var d = new Date(); d.setHours(0, 0, 0, 0); return d; }
+function addDays(d, n) { var x = new Date(d.getTime()); x.setDate(x.getDate() + n); return x; }
+function monday(d) { var x = new Date(d.getTime()); x.setDate(x.getDate() - ((x.getDay() + 6) % 7)); x.setHours(0, 0, 0, 0); return x; }
+function fmtDay(d) { return d.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' }); }
+function fmtShort(d) { return d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }); }
+
+/* le samedi qui précède : c'est là que le rappel commence */
+function satBefore(isoDate) {
+  var d = fromIso(isoDate);
+  var back = (d.getDay() - 6 + 7) % 7 || 7;
+  return addDays(d, -back);
+}
+A.todoSatBefore = satBefore;
+
+function pending() {
+  var t = today().getTime();
+  return todos().filter(function (x) { return !x.done && satBefore(x.d).getTime() <= t; });
+}
+A.todoPending = pending;
+
+/* ---------- compteur (barre latérale, pastille d'icône) ---------- */
+function paintCount() {
+  var n = pending().length;
+  var line = $('todoLine');
+  if (line) {
+    var all = todos().filter(function (x) { return !x.done; }).length;
+    line.hidden = false;
+    line.textContent = all ? 'Travail à faire : ' + all + (n ? ' (' + n + ' pour bientôt)' : '') : 'Travail à faire : rien';
+    line.dataset.on = n ? '1' : '';
+  }
+  try {
+    if (navigator.setAppBadge) { if (n) navigator.setAppBadge(n); else navigator.clearAppBadge(); }
+  } catch (e) { /* pas de pastille ici */ }
+}
+A.todoCount = paintCount;
+
+/* ---------- panneau ---------- */
+function rowHTML(x) {
+  var d = fromIso(x.d), late = d.getTime() < today().getTime();
+  return '<div class="ag-item' + (x.done ? ' done' : '') + (late && !x.done ? ' late' : '') + '" data-id="' + x.id + '">' +
+    '<button type="button" class="ag-check" data-act="done" aria-label="' + (x.done ? 'À refaire' : 'C’est fait') + '">' + (x.done ? '✓' : '') + '</button>' +
+    '<span class="ag-when">' + fmtShort(d) + '</span>' +
+    '<span class="ag-what">' + CF.figEsc(x.t) + (x.nt ? '<small>' + CF.figEsc(x.nt) + '</small>' : '') + '</span>' +
+    '<button type="button" class="ag-x" data-act="del" aria-label="Retirer">×</button>' +
+    '</div>';
+}
+
+function paint() {
+  var body = $('agBody');
+  if (!body) return;
+  var list = todos().slice().sort(function (a, b) { return a.d < b.d ? -1 : a.d > b.d ? 1 : 0; });
+  var todo = list.filter(function (x) { return !x.done; });
+  var done = list.filter(function (x) { return x.done; }).slice(-6);
+  var h = '';
+  h += '<div class="ag-list">' + (todo.length ? todo.map(rowHTML).join('') : '<p class="ag-empty">Rien de prévu. Choisis un jour plus bas.</p>') + '</div>';
+
+  var m0 = monday(today());
+  h += '<h3>Ajouter pour…</h3><div class="ag-weeks">';
+  for (var w = 0; w < WEEKS; w++) {
+    var ws = addDays(m0, w * 7);
+    h += '<div class="ag-week"><span class="ag-wlab">' + (w === 0 ? 'Cette semaine' : w === 1 ? 'Semaine prochaine' : 'Semaine du ' + fmtShort(ws)) + '</span><div class="ag-days">';
+    for (var k = 0; k < 7; k++) {
+      var d = addDays(ws, k), key = iso(d);
+      var isToday = d.getTime() === today().getTime();
+      var cnt = todos().filter(function (x) { return x.d === key && !x.done; }).length;
+      h += '<button type="button" class="ag-day' + (isToday ? ' now' : '') + (pickDay === key ? ' sel' : '') + (cnt ? ' has' : '') +
+        '" data-day="' + key + '" aria-label="' + fmtDay(d) + '">' +
+        '<small>' + ['L', 'M', 'M', 'J', 'V', 'S', 'D'][k] + '</small>' + d.getDate() + '</button>';
+    }
+    h += '</div></div>';
+  }
+  h += '</div>';
+
+  if (pickDay) {
+    var n = A.curNote();
+    h += '<div class="ag-add"><label for="agText">À faire pour <b>' + fmtDay(fromIso(pickDay)) + '</b>' + (n && n.title ? ' — ' + CF.figEsc(n.title) : '') + '</label>' +
+      '<div class="ag-addrow"><input id="agText" type="text" autocomplete="off" placeholder="Exercices 4 et 5, fiche de TD…"><button type="button" id="agOk">Ajouter</button></div></div>';
+  }
+  if (done.length) {
+    h += '<h3>Déjà fait</h3><div class="ag-list done">' + done.map(rowHTML).join('') + '</div>';
+  }
+  h += '<p class="ag-note">Le rappel apparaît à l’ouverture de l’appli à partir du week-end qui précède, et le petit chiffre rouge sur l’icône se met à jour à ce moment-là.</p>';
+  body.innerHTML = h;
+  var inp = $('agText');
+  if (inp) setTimeout(function () { inp.focus(); }, 40);
+}
+
+function add(text) {
+  var t = String(text || '').trim();
+  if (!t || !pickDay) return;
+  var n = A.curNote();
+  todos().push({ id: 'td-' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5), t: t, d: pickDay, n: n ? n.id : '', nt: n ? n.title : '', done: 0, c: A.now() });
+  save();
+  askPermission();
+  paint();
+  A.toast('Noté pour ' + fmtShort(fromIso(pickDay)));
+}
+
+function askPermission() {
+  try {
+    if (window.Notification && Notification.permission === 'default' && navigator.setAppBadge) Notification.requestPermission();
+  } catch (e) { /* ignore */ }
+}
+
+A.openAgenda = function (open) {
+  var on = open !== false;
+  $('agenda').hidden = !on;
+  $('scrim').hidden = !on;
+  if (on) { pickDay = null; paint(); }
+};
+
+/* ---------- rappel à l'ouverture ---------- */
+var POP_KEY = 'notesci-todo-pop';
+function popupIfNeeded() {
+  var list = pending();
+  if (!list.length) return;
+  var seen = '';
+  try { seen = localStorage.getItem(POP_KEY) || ''; } catch (e) { seen = ''; }
+  var key = iso(today());
+  if (seen === key) return;
+  $('todoPopList').innerHTML = list.map(function (x) {
+    return '<div class="ag-item" data-id="' + x.id + '"><button type="button" class="ag-check" data-act="done" aria-label="C’est fait"></button>' +
+      '<span class="ag-when">' + fmtShort(fromIso(x.d)) + '</span><span class="ag-what">' + CF.figEsc(x.t) +
+      (x.nt ? '<small>' + CF.figEsc(x.nt) + '</small>' : '') + '</span></div>';
+  }).join('');
+  $('todoPop').hidden = false;
+  try { localStorage.setItem(POP_KEY, key); } catch (e) { /* ignore */ }
+}
+
+function act(e) {
+  var btn = e.target.closest('[data-act]');
+  if (!btn) return;
+  var row = btn.closest('[data-id]');
+  if (!row) return;
+  var x = todos().find(function (y) { return y.id === row.dataset.id; });
+  if (!x) return;
+  if (btn.dataset.act === 'done') x.done = x.done ? 0 : 1;
+  else S.settings.todos = todos().filter(function (y) { return y.id !== x.id; });
+  save();
+  if (!$('agenda').hidden) paint();
+  if (!$('todoPop').hidden && !pending().length) $('todoPop').hidden = true;
+  else if (!$('todoPop').hidden) {
+    var r = $('todoPopList').querySelector('[data-id="' + x.id + '"]');
+    if (r) r.classList.toggle('done', !!x.done);
+  }
+}
+
+A.agendaInit = function () {
+  $('agClose').addEventListener('click', function () { A.openAgenda(false); });
+  $('agBody').addEventListener('click', function (e) {
+    var day = e.target.closest('[data-day]');
+    if (day) { pickDay = pickDay === day.dataset.day ? null : day.dataset.day; paint(); return; }
+    if (e.target.id === 'agOk') { add($('agText').value); return; }
+    act(e);
+  });
+  $('agBody').addEventListener('keydown', function (e) {
+    if (e.key === 'Enter' && e.target.id === 'agText') { e.preventDefault(); add(e.target.value); }
+  });
+  $('todoPop').addEventListener('click', act);
+  $('todoLater').addEventListener('click', function () { $('todoPop').hidden = true; });
+  var line = $('todoLine');
+  if (line) line.addEventListener('click', function () { A.openAgenda(true); });
+};
+
+A.agendaStart = function () {
+  paintCount();
+  setTimeout(popupIfNeeded, 900);
+};
+
+})(APP);
+
 /* Cahier de Formules — aide, export, démarrage */
 (function (A) {
 'use strict';
@@ -2675,6 +3530,8 @@ var HELP = [
     '|psi> = a|0> + b|1>', '<phi|psi> et <psi|H|psi>', '<x> et a^dag', '|lapin up>']],
   ['Chimie', 'Tout ce qui est dans ce(…) est une formule chimique : indices et charges sont automatiques.', [
     'ce(H2O) et ce(SO4^2-)', 'ce(2H2 + O2 -> 2H2O)', 'ce(CH3COOH + H2O <=> CH3COO- + H3O+)', 'pH = -log [ce(H3O+)]', 'Ka et pKa et E° et 25 °C']],
+  ['Couleurs, gras, souligné', 'Sélectionne un bout de ligne puis touche <b>B</b>, <b>U</b> ou une pastille de couleur en haut de la barre. La pastille noire enlève la couleur.', [
+    '**important**', '__à retenir__', '[rouge:attention] et [bleu:E = m c^2]', '[vert:dS = frac(delta Q, T)] et [violet:cas limite]']],
   ['Mise en page', 'Une ligne qui commence par = (ou <=>, <=, …) s’aligne sous la précédente. Deux espaces (ou la touche « espace ⎵ ») font sortir de la formule, y compris à l’intérieur d’une parenthèse. Une accolade posée en fin de ligne met ses rangées en face des lignes suivantes.', [
     ['f(x) = (x+1)^2', '= x^2 + 2x + 1'], ['2x + 3 = 7', '<=> x = 2'],
     '# Titre', '## Sous-titre', '- une puce', '> Définition encadrée', 'box(E = m c^2)', '**important**',
@@ -2698,6 +3555,8 @@ function buildHelp() {
     sec[2].forEach(function (src) { h += exHTML(src); });
     h += '</div>';
   });
+  h += '<h3>Repères et schémas</h3><p>Touche <b>Repère</b> dans la barre, choisis <b>Circulaire (3D)</b>, <b>Polaire (ρ, z)</b> ou <b>Cartésien (x, y)</b>. Ensuite, avec le doigt : <b>✐ Guidé</b> redresse les traits et arrondit les arcs (angles), <b>✎ Libre</b> dessine tel quel, <b>T Nom</b> pose un nom là où tu touches (M, K, vec(e_r)…). Les boutons <b>→</b> et <b>┄</b> mettent une flèche au bout ou des pointillés, et la pastille de couleur choisit l’encre. Le champ de légende écrit le long du dernier trait : <code>theta</code>, <code>delta t</code>, <code>vec(e_theta)</code>.</p>';
+  h += '<h3>Travail à faire</h3><p>Le bouton <b>Agenda</b> ouvre les semaines à venir : touche un jour, écris le travail, il se range avec la note en cours. Au week-end qui précède, un rappel s’affiche à l’ouverture de l’appli et un chiffre rouge apparaît sur l’icône ; il disparaît quand tu coches « fait ».</p>';
   h += '<h3>Mes raccourcis</h3><p>Ajoute tes propres abréviations : elles sont remplacées à l’affichage. Par exemple <code>w</code> → <code>omega</code>, ou <code>cste</code> → <code>constante</code>.</p><div class="custom" id="custom"></div>';
   body.innerHTML = h;
   renderCustom();
@@ -2888,9 +3747,11 @@ function boot() {
   A.loadInitial();
   CF.setCustom(S.settings.custom);
   A.init();
+  if (A.agendaInit) A.agendaInit();
   A.renderList();
   A.openNote(S.cur);
   A.setStatus();
+  if (A.agendaStart) A.agendaStart();
 
   $('newNote').addEventListener('click', function () { A.newNote(); $('app').classList.remove('drawer'); $('scrim').hidden = true; });
   $('newFolder').addEventListener('click', function () { A.newFolder(); });
@@ -2901,13 +3762,18 @@ function boot() {
   $('importFile').addEventListener('change', function () { var f = this.files && this.files[0]; if (f) importFile(f); });
   showBackupLine();
   $('menuBtn').addEventListener('click', function () { $('app').classList.toggle('drawer'); $('scrim').hidden = !$('app').classList.contains('drawer'); });
-  $('scrim').addEventListener('click', function () { $('app').classList.remove('drawer'); openHelp(false); });
+  $('scrim').addEventListener('click', function () { $('app').classList.remove('drawer'); openHelp(false); if (A.openAgenda) A.openAgenda(false); });
   $('modeRendu').addEventListener('click', function () { A.setMode('rendu'); });
   $('modeSource').addEventListener('click', function () { A.setMode('source'); });
   $('modeToggleSmall').addEventListener('click', function () { $('moreMenu').hidden = true; A.setMode(S.mode === 'rendu' ? 'source' : 'rendu'); });
   $('helpBtn').addEventListener('click', function () { openHelp(true); });
   $('helpClose').addEventListener('click', function () { openHelp(false); });
-  document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !$('help').hidden) openHelp(false); });
+  document.addEventListener('keydown', function (e) {
+    if (e.key !== 'Escape') return;
+    if (!$('help').hidden) openHelp(false);
+    if (!$('agenda').hidden && A.openAgenda) A.openAgenda(false);
+    if (!$('todoPop').hidden) $('todoPop').hidden = true;
+  });
 
   var more = $('moreBtn'), menu = $('moreMenu');
   more.addEventListener('click', function (e) {

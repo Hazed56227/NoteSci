@@ -1,5 +1,5 @@
 /* Cahier de formules — fonctionne sans réseau (amphi) */
-const VERSION = 'cahier-0470e34e6c';
+const VERSION = 'cahier-9a97f6b740';
 const CORE = ['./', './index.html', './firebase.js', './manifest.webmanifest', './icon-180.png', './icon-192.png', './icon-512.png'];
 
 self.addEventListener('install', (e) => {
@@ -17,6 +17,7 @@ self.addEventListener('activate', (e) => {
 self.addEventListener('fetch', (e) => {
   const req = e.request;
   if (req.method !== 'GET') return;
+  if (req.headers.has('Authorization')) return;     // réponses liées à ton compte (relais IA…) : jamais en cache
   const url = new URL(req.url);
 
   // l'appli elle-même : réponse immédiate depuis le cache, mise à jour en arrière-plan

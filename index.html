@@ -4300,6 +4300,14 @@ var S = A.state;
 var $ = function (id) { return document.getElementById(id); };
 var MODELS = { precis: 'claude-sonnet-5-5', rapide: 'claude-haiku-5-5' };
 A.AI_MODELS = MODELS;
+/* Les modèles 5.5 réfléchissent avant d'écrire, et cette réflexion (invisible) compte dans max_tokens :
+   on lui laisse de la place ; « effort » règle combien Claude réfléchit. Rapide : réflexion coupée. */
+var ASK = {
+  precis: { max_tokens: 12000, output_config: { effort: 'medium' } },
+  rapide: { max_tokens: 4000, thinking: { type: 'disabled' }, output_config: { effort: 'low' } }
+};
+A.AI_ASK = ASK;
+var CUT_OLD = '(réponse coupée : demande la suite)';
 
 function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
 function cfg() {
@@ -4548,7 +4556,14 @@ A.aiBuildContext = buildContext;
 /* ---------- fil de discussion (gardé sur l'appareil, par note) ---------- */
 var THREAD_KEY = 'notesci-ai-';
 function loadThread(id) {
-  try { return JSON.parse(localStorage.getItem(THREAD_KEY + (id || 'libre')) || '[]'); } catch (e) { return []; }
+  var list;
+  try { list = JSON.parse(localStorage.getItem(THREAD_KEY + (id || 'libre')) || '[]'); } catch (e) { list = []; }
+  if (!Array.isArray(list)) return [];
+  // anciennes réponses vides (« réponse coupée » sans texte) : on les retire du fil
+  return list.filter(function (x) { return x && x.q && typeof x.a === 'string'; }).map(function (x) {
+    if (x.a.indexOf(CUT_OLD) >= 0) { x.a = x.a.split(CUT_OLD).join('').trim(); x.cut = true; }
+    return x;
+  }).filter(function (x) { return x.a.trim(); });
 }
 function saveThread(id, list) {
   try { localStorage.setItem(THREAD_KEY + (id || 'libre'), JSON.stringify(list.slice(-20))); } catch (e) { /* plein */ }
@@ -4619,6 +4634,7 @@ function paintThread() {
     } else {
       body = '<div class="ai-a">' + (a.html || '<p class="ai-wait">Claude réfléchit…</p>') + '</div>' +
         (!x.pending && x.a ? '<div class="ai-foot">' +
+          (x.cut ? '<span class="ai-src">Réponse coupée faute de place : demande « la suite ».</span>' : '') +
           (a.sources ? '<span class="ai-src">Sources : ' + esc(a.sources) + '</span>' : '') +
           (state.noteId ? '<button type="button" class="ai-ins" data-ins="' + i + '">Insérer dans la note</button>' : '') +
         '</div>' : '');
@@ -4684,21 +4700,25 @@ function ask(question) {
   var ctrl = window.AbortController ? new AbortController() : null;
   state.ctrl = ctrl;
   var last = 0;
-  A.aiCall({
-    model: MODELS[cfg().mode] || MODELS.precis,
-    max_tokens: cfg().mode === 'rapide' ? 1200 : 2400,
+  var mode = cfg().mode === 'rapide' ? 'rapide' : 'precis';
+  A.aiCall(Object.assign({
+    model: MODELS[mode],
     system: SYSTEM,
     messages: history,
     stream: true
-  }, function (txt) {
+  }, JSON.parse(JSON.stringify(ASK[mode]))), function (txt) {
     item.a = txt;
     var now = Date.now();
     if (now - last > 120) { last = now; paintThread(); scrollEnd(); }
   }, { signal: ctrl && ctrl.signal }).then(function (res) {
-    item.a = res.text || item.a;
+    item.a = res.text || item.a || '';
     item.pending = false;
-    if (res.stop === 'max_tokens') item.a += '\n(réponse coupée : demande la suite)';
-    if (!item.a.trim()) item.error = 'Réponse vide : reformule ta question.';
+    if (!item.a.trim()) {
+      // toute la place est partie dans la réflexion : rien d'écrit
+      item.error = res.stop === 'max_tokens' ? 'Claude a manqué de place pour écrire sa réponse : renvoie la question.'
+        : res.stop === 'refusal' ? 'Claude a refusé de répondre à cette question.'
+        : 'Réponse vide : reformule ta question.';
+    } else if (res.stop === 'max_tokens') item.cut = true;
   }, function (e) {
     item.pending = false;
     item.error = errorText(e);
@@ -4928,6 +4948,7 @@ function callJSON(body, onText) {
     var t = String(res.text || '').trim().replace(/^```(?:json)?\s*/i, '').replace(/```\s*$/, '');
     var j;
     try { j = JSON.parse(t); } catch (e) {
+      if (res.stop === 'max_tokens' && !t) throw ownErr('Claude a manqué de place pour écrire sa réponse : réessaie.');
       if (res.stop === 'max_tokens') throw ownErr('Réponse trop longue, coupée : réessaie avec moins de documents à la fois.');
       if (res.stop === 'refusal') throw ownErr('Claude a refusé de traiter ce document.');
       throw ownErr('Réponse illisible : réessaie.');
@@ -4963,9 +4984,10 @@ function extractFile(fid, id, buf) {
   var f0 = fileById(fid, id);
   if (!f0) return Promise.resolve();                     // retiré entre-temps
   var body = {
-    model: model(), max_tokens: 12000, stream: true,
+    // lire et recopier : peu de réflexion (effort bas), mais de la place si le document est long
+    model: model(), max_tokens: 24000, stream: true,
     system: EXTRACT_SYSTEM,
-    output_config: { format: { type: 'json_schema', schema: EXTRACT_SCHEMA } },
+    output_config: { format: { type: 'json_schema', schema: EXTRACT_SCHEMA }, effort: 'low' },
     messages: [{ role: 'user', content: [
       { type: 'document', source: { type: 'base64', media_type: 'application/pdf', data: b64(buf) } },
       { type: 'text', text: 'Fichier : ' + f0.name + '. Nature indiquée par l’étudiant : ' + (f0.kind === 'auto' ? 'à déterminer' : f0.kind) + '.' }
@@ -5070,9 +5092,10 @@ function analyse(fid) {
   view.busy = 'analyse'; view.err = ''; view.progress = 0;
   paint();
   callJSON({
-    model: model(), max_tokens: 16000, stream: true,
+    // analyser et écrire le QCM : réflexion moyenne, et la place pour la réflexion + 30 questions
+    model: model(), max_tokens: 32000, stream: true,
     system: packSystem(subject, n),
-    output_config: { format: { type: 'json_schema', schema: PACK_SCHEMA } },
+    output_config: { format: { type: 'json_schema', schema: PACK_SCHEMA }, effort: 'medium' },
     messages: [{ role: 'user', content: payload }]
   }, function (txt) {
     view.progress = (txt.match(/"explication"/g) || []).length;

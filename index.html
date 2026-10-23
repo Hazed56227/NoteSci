@@ -324,8 +324,7 @@ strong { font-weight: 650; }
 @media (prefers-reduced-motion: reduce) { .side { transition: none; } }
 
 @media print {
-  .side, .top, .editor, .tail, .figzoom { display: none !important; }
-  svg.fig.fz-src, svg.fig.fz-hold { opacity: 1 !important; }
+  .side, .top, .editor, .tail { display: none !important; }
   .blk.editing { background: none; box-shadow: none; }
   .app { display: block; }
   .sheet { box-shadow: none; background: none; padding: 0; min-height: 0; }
@@ -362,26 +361,13 @@ svg.fig.drawing { touch-action: none; cursor: crosshair; border-color: var(--acc
 .fg-selbox { fill: color-mix(in srgb, var(--accent) 10%, transparent); stroke: var(--accent); stroke-width: 1; stroke-dasharray: 3 2; }
 .fg-lb.fg-on .fg-lab, .fg-lb.fg-on .fg-t { fill: var(--accent); }
 .fg-lb.fg-on .fg-pt { fill: var(--accent); }
-.fg-s.fg-on, .fg-lb.fg-on .fg-va { stroke: var(--accent); }
 svg.fig.lasso { cursor: crosshair; }
-
-/* le repère en grand pendant qu'on le modifie (celui de la note garde sa place) */
-.figzoom { position: fixed; inset: 0; z-index: 29; touch-action: none; }   /* ni défilement ni zoom de la page dessous */
-.fz-back { position: absolute; inset: 0; background: color-mix(in srgb, var(--chrome) 76%, transparent); opacity: 0; transition: opacity .22s ease;
-  padding: env(safe-area-inset-top, 0px) env(safe-area-inset-right, 0px) env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px); }   /* lu par le placement du repère */
-.figzoom.on .fz-back { opacity: 1; }
-.figzoom.closing { pointer-events: none; }
-.fz-stage { position: absolute; left: 0; top: 0; transform-origin: 0 0; transition: transform .28s cubic-bezier(.22, .8, .24, 1); }
-.fz-stage svg.fig { width: 100%; height: auto; max-width: none; box-shadow: var(--shadow); }
-svg.fig.fz-src, svg.fig.fz-hold { opacity: 0; }       /* pas visibility : les flèches des autres repères en dépendent */
-@media (prefers-reduced-motion: reduce) { .fz-back, .fz-stage { transition: none; } }
 
 /* barre du repère */
 .figbar { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; padding: 4px 0 2px; }
 .figbar .k.pen[aria-pressed="true"], .figbar .k.tgl[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); }
 .figbar .k.tgl { min-width: 34px; }
-.figcols { display: inline-flex; gap: 4px; }
-.figcols .k.col[aria-pressed="true"] { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-soft); }
+.figbar .ink { width: 16px; height: 16px; border-radius: 50%; box-shadow: inset 0 0 0 1px rgba(0,0,0,.2); }
 .figlab { flex: 1; min-width: 120px; font: inherit; font-size: 13px; padding: 6px 8px; border: 1px solid var(--line); border-radius: 8px; background: var(--edit-bg); color: var(--ink); }
 .k.danger { color: var(--danger); }
 .figpick { display: flex; gap: 6px; padding: 6px 0 2px; }
@@ -629,14 +615,6 @@ svg.fig.fz-src, svg.fig.fz-hold { opacity: 0; }       /* pas visibility : les fl
 .tr-btn:disabled, .tr-btn.off { opacity: .45; cursor: default; }
 .tr-mini { font: inherit; font-size: 13px; padding: 5px 10px; border-radius: 8px; border: 1px solid var(--line); background: var(--key); cursor: pointer; }
 .tr-warn { font-size: 13.5px; color: var(--danger); }
-.tr-note { font-size: 13.5px; color: var(--accent); margin: 4px 0; }
-.tr-instr textarea { display: block; width: 100%; min-height: 118px; resize: vertical; font: inherit; font-size: 15px; line-height: 1.45; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--edit-bg); color: var(--ink); }
-.tr-instr textarea::placeholder { color: var(--ink-faint); }
-.tr-instr textarea:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
-.tr-instr h2 label { cursor: text; }
-.tr-applied { margin: 10px 0 2px; padding: 9px 12px; border-left: 3px solid var(--accent); border-radius: 0 10px 10px 0; background: color-mix(in srgb, var(--accent-soft) 70%, transparent); }
-.tr-applied h3 { margin: 0 0 4px; }
-.tr-applied p { margin: 0; font-size: 14.5px; line-height: 1.45; }
 .tr-err { font-size: 14px; color: var(--danger); }
 .tr-run { font-size: 14.5px; color: var(--accent); animation: aiPulse 1.4s ease-in-out infinite; }
 @media (prefers-reduced-motion: reduce) { .tr-run { animation: none; } }
@@ -861,10 +839,6 @@ svg.lg { display: block; color: var(--ink); max-width: none; height: auto; }
         <textarea class="srcall" id="srcAll" hidden autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" aria-label="Source de la note"></textarea>
       </div>
     </div>
-    <div class="figzoom" id="figZoom" hidden>
-      <div class="fz-back" id="fzBack"></div>
-      <div class="fz-stage" id="fzStage"></div>
-    </div>
     <div class="editor" id="editor" hidden>
       <div class="ed-head">
         <span id="edWhere">Ligne 1</span>
@@ -879,12 +853,12 @@ svg.lg { display: block; color: var(--ink); max-width: none; height: auto; }
         <button type="button" id="penG" class="k pen" aria-pressed="false" title="Tracé guidé : droites et arcs redressés">✐ Guidé</button>
         <button type="button" id="penF" class="k pen" aria-pressed="false" title="Tracé libre">✎ Libre</button>
         <button type="button" id="penT" class="k pen" aria-pressed="false" title="Poser un nom (M, K, vec(e_r)…)">T Nom</button>
-        <button type="button" id="penL" class="k pen" aria-pressed="false" title="Lasso : entourer des tracés ou des noms pour les déplacer">◌ Lasso</button>
+        <button type="button" id="penL" class="k pen" aria-pressed="false" title="Lasso : entourer des noms pour les déplacer">◌ Lasso</button>
         <button type="button" id="figArrow" class="k tgl" aria-pressed="false" title="Mettre une flèche au bout">→</button>
         <button type="button" id="figDash" class="k tgl" aria-pressed="false" title="Trait en pointillés">- -</button>
-        <span class="figcols" id="figCols" role="group" aria-label="Encre"></span>
+        <span class="ink" id="figInk" aria-hidden="true"></span>
         <input id="figLab" class="figlab" type="text" autocomplete="off" autocorrect="off" spellcheck="false" placeholder="Nom / légende : theta, vec(e_r), delta t…" aria-label="Légende du dernier tracé">
-        <button type="button" id="figUndo" class="k" title="Annuler la dernière modification">↶</button>
+        <button type="button" id="figUndo" class="k" title="Annuler le dernier tracé">↶</button>
         <button type="button" id="figClear" class="k" title="Tout effacer">Effacer</button>
         <button type="button" id="figDel" class="k danger" title="Supprimer le repère">Supprimer</button>
       </div>
@@ -1864,142 +1838,29 @@ CF.figLabels = function (data) {
   return out;
 };
 
-/* ---------- le lasso : les tracés (jamais les axes du repère) et les noms ----------
-   identifiants : « p:i » = le tracé n° i (son nom le suit), « s:i » = le nom seul du tracé i
-   (ou le point nommé i), « ax:clé » = un nom d'axe. */
-function r1(v) { return Math.round(v * 10) / 10; }
-CF.figInPoly = function (p, poly) {
-  var inside = false;
-  for (var i = 0, j = poly.length - 1; i < poly.length; j = i++) {
-    var xi = poly[i][0], yi = poly[i][1], xj = poly[j][0], yj = poly[j][1];
-    if ((yi > p[1]) !== (yj > p[1]) && p[0] < (xj - xi) * (p[1] - yi) / ((yj - yi) || 1e-9) + xi) inside = !inside;
-  }
-  return inside;
-};
-/* points pris le long d'un tracé, tous les 3 unités environ */
-function samples(s) {
-  var out = [], p = s && s.p, k, n;
-  if (!Array.isArray(p)) return out;
-  if (s.t === 'a') {
-    if (!num(p[0]) || !num(p[1]) || !num(p[2]) || !num(p[3]) || !num(p[4])) return out;
-    n = Math.min(400, Math.max(2, Math.ceil(Math.abs(p[4] - p[3]) * Math.abs(p[2]) / 3)));
-    for (k = 0; k <= n; k++) {
-      var a = p[3] + (p[4] - p[3]) * k / n;
-      out.push([p[0] + p[2] * Math.cos(a), p[1] - p[2] * Math.sin(a)]);
-    }
-    return out;
-  }
-  for (var i = 0; i + 1 < p.length; i += 2) {
-    if (!num(p[i]) || !num(p[i + 1])) continue;
-    var last = out[out.length - 1];
-    if (last) {
-      n = Math.min(200, Math.max(1, Math.ceil(Math.hypot(p[i] - last[0], p[i + 1] - last[1]) / 3)));
-      for (k = 1; k < n; k++) out.push([last[0] + (p[i] - last[0]) * k / n, last[1] + (p[i + 1] - last[1]) * k / n]);
-    }
-    out.push([p[i], p[i + 1]]);
-  }
-  return out;
-}
-function boxOf(pts) {
-  var b = null;
-  pts.forEach(function (q) { b = b ? [Math.min(b[0], q[0]), Math.min(b[1], q[1]), Math.max(b[2], q[0]), Math.max(b[3], q[1])] : [q[0], q[1], q[0], q[1]]; });
-  return b;
-}
-/* les tracés qu'on peut prendre au lasso (les points nommés, eux, se prennent comme des noms) */
-CF.figStrokes = function (data) {
-  var out = [];
-  ((data && data.d) || []).forEach(function (s, i) {
-    if (!s || s.t === 'x') return;
-    var pts = samples(s);
-    if (pts.length) out.push({ id: 'p:' + i, i: i, pts: pts, box: boxOf(pts) });
-  });
-  return out;
-};
-function labBox(l) { return [l.x - l.w / 2, l.y - l.h / 2, l.x + l.w / 2, l.y + l.h / 2]; }
-/* le nom « s:i » part-il avec le tracé « p:i » choisi ? */
-function follows(want, id) { return id.indexOf('s:') === 0 && !!want['p:' + id.slice(2)]; }
-
-/* ce qu'un lasso entoure : un tracé quand les trois quarts de sa longueur sont dedans,
-   un nom quand son centre est dedans (sauf s'il part déjà avec son tracé) */
-CF.figLassoPick = function (data, poly) {
-  var ids = [], want = {};
-  if (!data || !poly || poly.length < 3) return ids;
-  CF.figStrokes(data).forEach(function (st) {
-    var inside = 0;
-    st.pts.forEach(function (q) { if (CF.figInPoly(q, poly)) inside++; });
-    if (inside >= 0.75 * st.pts.length) { ids.push(st.id); want[st.id] = 1; }
-  });
-  CF.figLabels(data).forEach(function (l) {
-    if (!follows(want, l.id) && CF.figInPoly([l.x, l.y], poly)) ids.push(l.id);
-  });
-  // les noms des axes restent avec leurs axes quand on emporte un dessin ;
-  // on ne les prend que s'ils sont seuls dans la boucle
-  var mine = ids.filter(function (id) { return id.indexOf('ax:') !== 0; });
-  return mine.length ? mine : ids;
-};
-/* un simple toucher : le nom touché, sinon le tracé le plus proche (à tol unités près) */
-CF.figTapPick = function (data, pt, tol) {
-  var best = null, bd = Infinity;
-  CF.figLabels(data).forEach(function (l) {
-    if (Math.abs(pt[0] - l.x) <= l.w / 2 + 6 && Math.abs(pt[1] - l.y) <= l.h / 2 + 6) {
-      var d = Math.hypot(pt[0] - l.x, pt[1] - l.y);
-      if (d < bd) { bd = d; best = l.id; }
-    }
-  });
-  if (best) return best;
-  CF.figStrokes(data).forEach(function (st) {
-    st.pts.forEach(function (q) {
-      var d = Math.hypot(pt[0] - q[0], pt[1] - q[1]);
-      if (d < bd) { bd = d; best = st.id; }
-    });
-  });
-  return bd <= (tol || 8) ? best : null;
-};
-/* le doigt est-il sur un élément choisi (un tracé à tol unités près, ou un nom) ? */
-CF.figNearSel = function (data, ids, pt, tol) {
-  var want = {};
-  tol = tol || 12;
-  (ids || []).forEach(function (id) { want[id] = 1; });
-  if (!data) return false;
-  return CF.figStrokes(data).some(function (st) {
-    return want[st.id] && st.pts.some(function (q) { return Math.hypot(pt[0] - q[0], pt[1] - q[1]) <= tol; });
-  }) || CF.figLabels(data).some(function (l) {
-    return (want[l.id] || follows(want, l.id)) && Math.abs(pt[0] - l.x) <= l.w / 2 + tol * 0.7 && Math.abs(pt[1] - l.y) <= l.h / 2 + tol * 0.7;
-  });
-};
-/* le rectangle qui englobe la sélection (tracés + leurs noms + noms seuls) */
-CF.figSelBox = function (data, ids) {
-  var want = {}, box = null;
-  (ids || []).forEach(function (id) { want[id] = 1; });
-  function add(b) { box = box ? [Math.min(box[0], b[0]), Math.min(box[1], b[1]), Math.max(box[2], b[2]), Math.max(box[3], b[3])] : b.slice(); }
-  if (!data) return null;
-  CF.figStrokes(data).forEach(function (st) { if (want[st.id]) add(st.box); });
-  CF.figLabels(data).forEach(function (l) { if (want[l.id] || follows(want, l.id)) add(labBox(l)); });
-  return box;
-};
-
-/* déplace la sélection (ids ci-dessus) ; rien ne sort du cadre (et ce qui en dépasse déjà
-   n'en sort pas davantage). Les axes eux-mêmes ne bougent jamais. Renvoie le déplacement appliqué. */
-CF.figMove = function (data, ids, dx, dy) {
+/* déplace des noms (ids de figLabels) ; le groupe reste dans le cadre du repère.
+   Renvoie le déplacement réellement appliqué. */
+CF.figMoveLabels = function (data, ids, dx, dy) {
   if (!data || !ids || !ids.length) return [0, 0];
-  var g = CF.figGeo(data.k), want = {};
+  var g = CF.figGeo(data.k), want = {}, lab = CF.figLabels(data);
   ids.forEach(function (id) { want[id] = 1; });
-  var lo = [-Infinity, -Infinity], hi = [Infinity, Infinity];
-  function limit(b, mx, top, bottom) {
-    lo[0] = Math.max(lo[0], Math.min(0, mx - b[0])); hi[0] = Math.min(hi[0], Math.max(0, g.W - mx - b[2]));
-    lo[1] = Math.max(lo[1], Math.min(0, top - b[1])); hi[1] = Math.min(hi[1], Math.max(0, g.H - bottom - b[3]));
-  }
-  CF.figStrokes(data).forEach(function (st) { if (want[st.id]) limit(st.box, 2, 2, 2); });
-  CF.figLabels(data).forEach(function (l) { if (want[l.id] || follows(want, l.id)) limit(labBox(l), 4, 4, 2); });
-  dx = num(dx) ? r1(Math.max(lo[0], Math.min(hi[0], dx))) : 0;
-  dy = num(dy) ? r1(Math.max(lo[1], Math.min(hi[1], dy))) : 0;
+  var minDx = -Infinity, maxDx = Infinity, minDy = -Infinity, maxDy = Infinity;
+  lab.forEach(function (l) {
+    if (!want[l.id]) return;
+    minDx = Math.max(minDx, 4 - (l.x - l.w / 2)); maxDx = Math.min(maxDx, g.W - 4 - (l.x + l.w / 2));
+    minDy = Math.max(minDy, 4 - (l.y - l.h / 2)); maxDy = Math.min(maxDy, g.H - 2 - (l.y + l.h / 2));
+  });
+  if (minDx > maxDx) { minDx = maxDx = 0; }
+  if (minDy > maxDy) { minDy = maxDy = 0; }
+  dx = Math.round(Math.max(minDx, Math.min(maxDx, dx)) * 10) / 10;
+  dy = Math.round(Math.max(minDy, Math.min(maxDy, dy)) * 10) / 10;
   if (!dx && !dy) return [0, 0];
   function add(o) {
     var a = Array.isArray(o) && num(o[0]) ? o[0] : 0, b = Array.isArray(o) && num(o[1]) ? o[1] : 0;
     return [Math.round(a * 10 + dx * 10) / 10, Math.round(b * 10 + dy * 10) / 10];
   }
   ids.forEach(function (id) {
-    var m = /^(s|ax|p):(.+)$/.exec(id);
+    var m = /^(s|ax):(.+)$/.exec(id);
     if (!m) return;
     if (m[1] === 'ax') {
       if (!data.al || typeof data.al !== 'object') data.al = {};
@@ -2007,20 +1868,12 @@ CF.figMove = function (data, ids, dx, dy) {
       return;
     }
     var s = (data.d || [])[+m[2]];
-    if (!s || !Array.isArray(s.p)) return;
-    if (m[1] === 'p') {
-      if (s.t === 'x') return;
-      if (s.t === 'a') { s.p[0] = r1(s.p[0] + dx); s.p[1] = r1(s.p[1] + dy); return; }
-      for (var k = 0; k + 1 < s.p.length; k += 2) { s.p[k] = r1(s.p[k] + dx); s.p[k + 1] = r1(s.p[k + 1] + dy); }
-      return;
-    }
-    if (want['p:' + m[2]]) return;                    // le nom est déjà parti avec son tracé
-    if (s.t === 'x') { s.p = [r1(s.p[0] + dx), r1(s.p[1] + dy)]; return; }
+    if (!s) return;
+    if (s.t === 'x') { s.p = [Math.round((s.p[0] + dx) * 10) / 10, Math.round((s.p[1] + dy) * 10) / 10]; return; }
     s.lo = add(s.lo);
   });
   return [dx, dy];
 };
-CF.figMoveLabels = CF.figMove;                        // ancien nom (noms seuls)
 
 CF.figSVG = function (data, idx) {
   var g = CF.figGeo(data.k);
@@ -3428,8 +3281,6 @@ function normWs(w) {
   if (!w.costs || typeof w.costs !== 'object' || Array.isArray(w.costs)) { w.costs = {}; if (+w.spent > 0) w.costs.avant = +w.spent; }
   w.spent = sumCosts(w.costs);
   if (!w.pack || typeof w.pack !== 'object') w.pack = null;
-  if (typeof w.instr !== 'string') w.instr = '';      // consignes écrites pour l'IA (ce que le prof a dit…)
-  w.instrT = +w.instrT || 0;                          // dernière modification : la plus récente gagne
   w.updated = +w.updated || 0;
   return w;
 }
@@ -3522,8 +3373,7 @@ function sigWs(w) {                            // ce qui distingue deux copies (
     w.removed.slice().sort(),
     w.pack ? +w.pack.generated || 1 : 0,
     Object.keys(w.progress).sort().map(function (k) { var p = w.progress[k] || {}; return [k, p.t || 0, p.r || 0, p.w || 0].join('|'); }),
-    Object.keys(w.costs).sort().map(function (k) { return k + '|' + w.costs[k]; }),
-    [w.instrT || 0, w.instr || '']
+    Object.keys(w.costs).sort().map(function (k) { return k + '|' + w.costs[k]; })
   ]);
 }
 /* fusionne la copie r (du compte) dans la copie locale l, modifiée sur place : une lecture en cours la retrouve */
@@ -3549,7 +3399,6 @@ function mergeWs(l, r) {
   l.files = order.filter(function (id) { return !removed[id]; }).map(function (id) { return byId[id]; });
   l.removed = Object.keys(removed).sort().slice(-300);
   if (r.pack && (!l.pack || (+r.pack.generated || 0) > (+l.pack.generated || 0))) l.pack = r.pack;
-  if (r.instrT > l.instrT) { l.instr = r.instr; l.instrT = r.instrT; }
   Object.keys(r.progress).forEach(function (k) {
     var a = l.progress[k], b = r.progress[k];
     if (!a || (+b.t || 0) > (+a.t || 0)) l.progress[k] = b;
@@ -3564,7 +3413,7 @@ function mergeWs(l, r) {
   return { local: gained || after !== before, remote: after !== sigWs(r) };
 }
 A.trainMerge = function (l, r) { return mergeWs(normWs(l), r); };
-function hasWork(w) { return !!(w.files.length || w.pack || Object.keys(w.progress).length || w.removed.length || w.instr.trim()); }
+function hasWork(w) { return !!(w.files.length || w.pack || Object.keys(w.progress).length || w.removed.length); }
 
 /* ce qui arrive du compte ; renvoie vrai si l'écran doit être redessiné */
 function mergeTrain(snap, incremental) {
@@ -4649,8 +4498,7 @@ A.init = function () {
 
 })(APP);
 
-/* NoteSci — repères : insertion, stylos, tracés au doigt, lasso pour déplacer tracés et noms,
-   et le repère en grand au milieu de l'écran tant qu'on le modifie */
+/* NoteSci — repères : insertion, stylos, tracés au doigt, lasso pour déplacer les noms */
 (function (A) {
 'use strict';
 var S = A.state;
@@ -4661,9 +4509,8 @@ var pen = null;            // null | 'g' (guidé) | 'f' (libre) | 't' (texte) | 
 var arrow = false, dash = false;
 var color = '#14161c';
 var drawing = null;        // tracé ou lasso en cours
-var sel = [], selLine = -1;   // ce que le lasso a pris : « p:i » tracés, « s:i » / « ax:… » noms (voir CF.figMove)
-var selPoly = null;          // la boucle du lasso (en unités du repère) : on attrape la sélection n'importe où dedans
-var drag = null;           // sélection en train de glisser
+var sel = [], selLine = -1;   // noms entourés au lasso (identifiants de CF.figLabels)
+var drag = null;           // noms en train de glisser
 var hist = [], histLine = -1, histNote = null, lastWrite = null; // annulation : états précédents du repère en cours
 
 function figIndex() {
@@ -4719,142 +4566,30 @@ A.figInsert = function (kind) {
   A.toast('Repère ajouté — choisis un stylo et trace avec le doigt');
 };
 
-/* ---------- le repère en grand pendant qu'on le modifie ----------
-   Une copie agrandie, posée au milieu de l'écran (sous le traducteur, ou à sa droite si la place
-   y est plus grande). Celui de la note garde sa place et sa taille ; « Terminé » y ramène la copie. */
-var zoom = { el: null, stage: null, back: null, open: false, idx: -1, line: null, note: null, timer: 0, downBack: false };
-var MAXS = 3;                                   // au plus trois fois sa taille dans la note
-function reduced() { return !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches); }
-function docSvg(i) { return i < 0 ? null : document.querySelector('#lines svg.fig[data-line="' + i + '"]'); }
-function zoomSvg() { return zoom.open ? zoom.stage.querySelector('svg.fig') : null; }
-
-function zoomRender(i) {
-  var line = S.lines[i];
-  if (zoom.idx === i && zoom.line === line && zoom.stage.firstChild) return;
-  var d = CF.figParse(line);
-  if (!d) return;
-  // flèches : des identifiants à part (ceux du repère de la note, caché pendant ce temps, ne s'afficheraient pas)
-  zoom.stage.innerHTML = CF.figSVG(d, i).replace(/(id="|url\(#)(v?)fgA/g, '$1$2fzA');
-  zoom.idx = i; zoom.line = line;
-}
-function zoomLayout() {
-  if (!zoom.open || drawing || drag) return;
-  var d = data();
-  if (!d) return;
-  var g = CF.figGeo(d.k), M = 14;
-  var vv = window.visualViewport;
-  // zones réservées de l'écran (barre d'accueil de l'iPad…), lues sur le fond (padding: env(safe-area-inset-*))
-  var cs = getComputedStyle(zoom.back);
-  var sl = parseFloat(cs.paddingLeft) || 0, sr = parseFloat(cs.paddingRight) || 0, st = parseFloat(cs.paddingTop) || 0, sb = parseFloat(cs.paddingBottom) || 0;
-  var view = { x: (vv ? vv.offsetLeft : 0) + M + sl, y: (vv ? vv.offsetTop : 0) + M + st,
-    w: (vv ? vv.width : window.innerWidth) - 2 * M - sl - sr, h: (vv ? vv.height : window.innerHeight) - 2 * M - st - sb };
-  var ed = $('editor'), er = ed && !ed.hidden ? ed.getBoundingClientRect() : null;
-  var spots = er && er.width ? [
-    { x: view.x, y: er.bottom + M, w: view.w, h: view.y + view.h - er.bottom - M },         // sous le traducteur
-    { x: er.right + M, y: view.y, w: view.x + view.w - er.right - M, h: view.h }              // à sa droite
-  ] : [view];
-  var best = null;
-  spots.forEach(function (r) {
-    if (r.w < 60 || r.h < 40) return;
-    var s = Math.min(r.w / g.W, r.h / g.H, MAXS);
-    if (!best || s > best.s) best = { r: r, s: s };
-  });
-  if (!best) best = { r: view, s: Math.max(0.5, Math.min(view.w / g.W, view.h / g.H, MAXS)) };
-  var w = g.W * best.s, h = g.H * best.s, r = best.r;
-  // au milieu de l'écran autant que possible, sans passer sous le traducteur
-  var left = Math.min(Math.max(view.x + (view.w - w) / 2, r.x), r.x + r.w - w);
-  var top = Math.min(Math.max(view.y + (view.h - h) / 2, r.y), r.y + r.h - h);
-  zoom.stage.style.left = Math.round(left) + 'px';
-  zoom.stage.style.top = Math.round(top) + 'px';
-  zoom.stage.style.width = Math.round(w) + 'px';
-}
-A.figLayout = zoomLayout;
-
-function finishClose() {
-  clearTimeout(zoom.timer);
-  zoom.el.hidden = true;
-  zoom.el.classList.remove('closing', 'on');
-  zoom.stage.style.transition = '';
-  zoom.stage.style.transform = '';
-  zoom.stage.innerHTML = '';
-  zoom.idx = -1; zoom.line = null; zoom.note = null;
-  [].forEach.call(document.querySelectorAll('#lines svg.fig.fz-hold'), function (s) { s.classList.remove('fz-hold'); });
-}
-function zoomOpen(i) {
-  if (zoom.open) { zoomRender(i); zoomLayout(); return; }
-  if (!zoom.el.hidden) finishClose();          // on rouvre pendant que l'autre se rangeait
-  zoomRender(i);
-  if (!zoom.stage.firstChild) return;
-  zoom.open = true; zoom.note = S.cur;
-  zoom.el.hidden = false;
-  zoomLayout();
-  var st = zoom.stage, src = docSvg(i), from = src && src.getBoundingClientRect();
-  if (from && from.width > 0 && !reduced()) {
-    // il part de sa place dans la note et grandit jusqu'au milieu de l'écran
-    var to = st.getBoundingClientRect();
-    st.style.transition = 'none';
-    st.style.transform = 'translate(' + (from.left - to.left).toFixed(1) + 'px,' + (from.top - to.top).toFixed(1) + 'px) scale(' + (from.width / to.width).toFixed(4) + ')';
-    void st.offsetWidth;
-    st.style.transition = '';
-    st.style.transform = '';
-  }
-  zoom.el.classList.add('on');
-}
-function zoomClose() {
-  if (!zoom.open) return;
-  zoom.open = false;
-  // même note, même repère (pas supprimé ni décalé entre-temps) : la copie revient s'y poser
-  var st = zoom.stage, same = zoom.note === S.cur && S.lines[zoom.idx] === zoom.line, dst = same ? docSvg(zoom.idx) : null;
-  var to = dst && dst.getBoundingClientRect(), cur = st.getBoundingClientRect();
-  var vis = !!to && to.width > 0 && cur.width > 0 && to.bottom > 0 && to.top < window.innerHeight && !reduced();
-  zoom.el.classList.remove('on');
-  zoom.el.classList.add('closing');
-  if (vis) {
-    // la copie revient se poser sur le repère de la note, qui reste caché jusque-là
-    dst.classList.add('fz-hold');
-    st.style.transform = 'translate(' + (to.left - cur.left).toFixed(1) + 'px,' + (to.top - cur.top).toFixed(1) + 'px) scale(' + (to.width / cur.width).toFixed(4) + ')';
-  }
-  zoom.timer = setTimeout(finishClose, vis ? 300 : reduced() ? 0 : 180);
-}
-/* le repère de la note reste à sa place mais s'efface pendant qu'on travaille sur la copie */
-function markDoc(i) {
-  [].forEach.call(document.querySelectorAll('#lines svg.fig'), function (sv) {
-    sv.classList.toggle('fz-src', zoom.open && +sv.dataset.line === i);
-    sv.classList.remove('drawing', 'lasso');
-  });
-}
-
 /* ---------- barre du repère ---------- */
 function paintBar() {
-  var bar = $('figbar'), i = figIndex(), on = i >= 0;
+  var bar = $('figbar'), on = figIndex() >= 0;
   bar.hidden = !on;
   $('src').hidden = on;
   $('live').hidden = on;
-  $('kb').hidden = on;                // le clavier de formules écrirait dans la ligne du repère
-  $('copyTex').hidden = on;
-  if (!on) { pen = null; sel = []; selPoly = null; selLine = -1; drag = null; drawing = null; resetHistory(); zoomClose(); markDoc(-1); return; }
-  if (selLine !== i) { sel = []; selPoly = null; selLine = i; }
-  if (histLine !== i || histNote !== S.cur) resetHistory();
+  if (!on) { pen = null; sel = []; selLine = -1; drag = null; resetHistory(); return; }
+  if (selLine !== figIndex()) { sel = []; selLine = figIndex(); }
+  if (histLine !== figIndex() || histNote !== S.cur) resetHistory();
   $('penG').setAttribute('aria-pressed', pen === 'g');
   $('penF').setAttribute('aria-pressed', pen === 'f');
   $('penT').setAttribute('aria-pressed', pen === 't');
   $('penL').setAttribute('aria-pressed', pen === 'l');
   $('figArrow').setAttribute('aria-pressed', arrow);
   $('figDash').setAttribute('aria-pressed', dash);
-  [].forEach.call(document.querySelectorAll('#figCols button'), function (b) {
-    b.setAttribute('aria-pressed', String(b.dataset.c.toLowerCase() === color.toLowerCase()));
-  });
+  $('figInk').style.background = color;
   var d = data(), last = d && d.d.length ? d.d[d.d.length - 1] : null;
   var lab = $('figLab');
   if (document.activeElement !== lab) lab.value = last && last.w ? last.w : '';
   lab.disabled = !last;
-  zoomOpen(i);
-  markDoc(i);
-  var sv = activeSvg();
-  if (sv) {
-    sv.classList.toggle('drawing', !!pen);
-    sv.classList.toggle('lasso', pen === 'l');
-  }
+  [].forEach.call(document.querySelectorAll('svg.fig'), function (sv) {
+    sv.classList.toggle('drawing', !!pen && +sv.dataset.line === figIndex());
+    sv.classList.toggle('lasso', pen === 'l' && +sv.dataset.line === figIndex());
+  });
   paintSel();
 }
 A.figRefresh = paintBar;
@@ -4866,18 +4601,19 @@ function toFig(sv, e) {
   return [(e.clientX - r.left) / r.width * g.W, (e.clientY - r.top) / r.height * g.H];
 }
 function activeSvg() {
-  return zoomSvg() || docSvg(figIndex());
+  var i = figIndex();
+  return i < 0 ? null : document.querySelector('#lines svg.fig[data-line="' + i + '"]');
 }
 
 function onDown(e) {
   var sv = e.target.closest && e.target.closest('svg.fig');
-  if (!sv || !pen || drawing || drag) return;
-  if (+sv.dataset.line !== figIndex() || sv !== activeSvg()) return;
+  if (!sv || !pen) return;
+  if (+sv.dataset.line !== figIndex()) return;
   e.preventDefault(); e.stopPropagation();
   var pt = toFig(sv, e);
   if (pen === 't') { placeText(pt); return; }
   if (pen === 'l' && sel.length && inSelection(pt)) {
-    drag = { sv: sv, id: e.pointerId, start: pt, dx: 0, dy: 0, onItem: CF.figNearSel(data(), sel, pt, 12) };
+    drag = { sv: sv, id: e.pointerId, start: pt, dx: 0, dy: 0 };
   } else {
     drawing = { sv: sv, pts: [pt], id: e.pointerId, lasso: pen === 'l' };
   }
@@ -4888,7 +4624,7 @@ function onMove(e) {
     e.preventDefault();
     var pt = toFig(drag.sv, e);
     var probe = data();
-    var got = probe ? CF.figMove(probe, sel, pt[0] - drag.start[0], pt[1] - drag.start[1]) : [0, 0];
+    var got = probe ? CF.figMoveLabels(probe, sel, pt[0] - drag.start[0], pt[1] - drag.start[1]) : [0, 0];
     drag.dx = got[0]; drag.dy = got[1];
     shiftSelection(drag.sv, got[0], got[1]);
     return;
@@ -4906,17 +4642,11 @@ function onUp(e) {
   if (drag && (e.pointerId == null || e.pointerId === drag.id)) {
     var dd = drag;
     drag = null;
-    if (Math.abs(dd.dx) + Math.abs(dd.dy) < 0.5) {
-      shiftSelection(dd.sv, 0, 0);
-      // simple toucher dans la boucle, à côté de ce qui est choisi : on lâche la sélection
-      if (!dd.onItem) { sel = []; selPoly = null; paintSel(); }
-      return;
-    }
+    if (Math.abs(dd.dx) + Math.abs(dd.dy) < 0.5) { shiftSelection(dd.sv, 0, 0); return; }
     var dm = data();
     if (!dm) return;
     snapshot();
-    CF.figMove(dm, sel, dd.dx, dd.dy);
-    if (selPoly) selPoly = selPoly.map(function (q) { return [q[0] + dd.dx, q[1] + dd.dy]; });
+    CF.figMoveLabels(dm, sel, dd.dx, dd.dy);
     write(dm);
     paintBar();
     return;
@@ -4950,136 +4680,94 @@ function placeText(pt) {
   lab.focus({ preventScroll: true });
 }
 
-/* ---------- lasso : entourer des tracés ou des noms, puis les faire glisser ---------- */
+/* ---------- lasso : entourer des noms, puis les faire glisser ---------- */
+function inPolygon(p, poly) {
+  var inside = false;
+  for (var i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+    var xi = poly[i][0], yi = poly[i][1], xj = poly[j][0], yj = poly[j][1];
+    if ((yi > p[1]) !== (yj > p[1]) && p[0] < (xj - xi) * (p[1] - yi) / ((yj - yi) || 1e-9) + xi) inside = !inside;
+  }
+  return inside;
+}
 function pathLength(pts) {
   var len = 0;
   for (var i = 1; i < pts.length; i++) len += Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]);
   return len;
 }
-function loop(pts) {                      // la boucle, allégée (un point tous les 2 unités)
-  var out = [];
-  pts.forEach(function (q) {
-    var l = out[out.length - 1];
-    if (!l || Math.hypot(q[0] - l[0], q[1] - l[1]) >= 2) out.push([Math.round(q[0] * 10) / 10, Math.round(q[1] * 10) / 10]);
-  });
-  return out.length >= 3 ? out : null;
-}
 function finishLasso(d, pts) {
+  var labs = CF.figLabels(d);
   if (pathLength(pts) < 10) {
-    // simple toucher : le nom ou le tracé touché (s'il y en a un), sinon on désélectionne
-    var hit = CF.figTapPick(d, pts[0], 8);
-    sel = hit ? [hit] : [];
-    selPoly = null;
+    // simple toucher : le nom touché (s'il y en a un), sinon on désélectionne
+    var p = pts[0], best = null, bd = Infinity;
+    labs.forEach(function (l) {
+      if (Math.abs(p[0] - l.x) <= l.w / 2 + 6 && Math.abs(p[1] - l.y) <= l.h / 2 + 6) {
+        var dd = Math.hypot(p[0] - l.x, p[1] - l.y);
+        if (dd < bd) { bd = dd; best = l; }
+      }
+    });
+    sel = best ? [best.id] : [];
   } else {
-    sel = CF.figLassoPick(d, pts);
-    selPoly = sel.length ? loop(pts) : null;
-    if (!sel.length) A.toast('Rien dans le lasso : entoure tout le tracé, ou tout le nom');
+    sel = labs.filter(function (l) { return inPolygon([l.x, l.y], pts); }).map(function (l) { return l.id; });
+    if (!sel.length) A.toast('Aucun nom dans le lasso : entoure le nom entier');
   }
   selLine = figIndex();
   paintSel();
 }
-/* on attrape la sélection dans la boucle du lasso, ou sur un élément choisi ;
-   ailleurs, le doigt trace un nouveau lasso */
-function inSelection(pt) {
-  if (!sel.length) return false;
-  if (selPoly && CF.figInPoly(pt, selPoly)) return true;
-  return CF.figNearSel(data(), sel, pt, 12);
-}
-/* les éléments du dessin qui bougent avec la sélection : le tracé, son nom, les noms seuls */
-function selNodes(sv) {
-  var out = [];
-  sel.forEach(function (id) {
-    var m = /^p:(\d+)$/.exec(id), n;
-    if (m) {
-      n = sv.querySelector('path.fg-s[data-i="' + m[1] + '"]'); if (n) out.push(n);
-      n = sv.querySelector('[data-lb="s:' + m[1] + '"]'); if (n) out.push(n);
-      return;
-    }
-    n = sv.querySelector('[data-lb="' + id + '"]'); if (n) out.push(n);
+function selBox() {
+  var d = data();
+  if (!d || !sel.length) return null;
+  var want = {}, box = null;
+  sel.forEach(function (id) { want[id] = 1; });
+  CF.figLabels(d).forEach(function (l) {
+    if (!want[l.id]) return;
+    var b = [l.x - l.w / 2, l.y - l.h / 2, l.x + l.w / 2, l.y + l.h / 2];
+    box = box ? [Math.min(box[0], b[0]), Math.min(box[1], b[1]), Math.max(box[2], b[2]), Math.max(box[3], b[3])] : b;
   });
-  return out;
+  return box;
+}
+function inSelection(pt) {
+  var b = selBox();
+  return !!b && pt[0] >= b[0] - 10 && pt[0] <= b[2] + 10 && pt[1] >= b[1] - 10 && pt[1] <= b[3] + 10;
 }
 function paintSel() {
   var sv = activeSvg();
   [].forEach.call(document.querySelectorAll('svg.fig .fg-selbox'), function (r) { r.parentNode.removeChild(r); });
-  [].forEach.call(document.querySelectorAll('svg.fig .fg-on'), function (g) { g.classList.remove('fg-on'); g.removeAttribute('transform'); });
-  [].forEach.call(document.querySelectorAll('svg.fig [data-me]'), function (p) { p.setAttribute('marker-end', p.getAttribute('data-me')); p.removeAttribute('data-me'); });
+  [].forEach.call(document.querySelectorAll('svg.fig .fg-lb.fg-on'), function (g) { g.classList.remove('fg-on'); g.removeAttribute('transform'); });
   if (!sv || pen !== 'l' || !sel.length) return;
   var d = data(), have = {};
   CF.figLabels(d).forEach(function (l) { have[l.id] = 1; });
-  CF.figStrokes(d).forEach(function (st) { have[st.id] = 1; });
   sel = sel.filter(function (id) { return have[id]; });
-  var b = CF.figSelBox(d, sel);
-  if (!b) { sel = []; selPoly = null; return; }
-  selNodes(sv).forEach(function (n) {
-    n.classList.add('fg-on');
-    // les pointes de flèche prennent aussi la couleur de la sélection
-    (n.hasAttribute('marker-end') ? [n] : []).concat([].slice.call(n.querySelectorAll('[marker-end]'))).forEach(function (p) {
-      var v = /url\(#v/.test(p.getAttribute('marker-end'));
-      p.setAttribute('data-me', p.getAttribute('marker-end'));
-      p.setAttribute('marker-end', 'url(#' + selMarker(sv, v) + ')');
-    });
+  var b = selBox();
+  if (!b) return;
+  sel.forEach(function (id) {
+    var g = sv.querySelector('[data-lb="' + id + '"]');
+    if (g) g.classList.add('fg-on');
   });
-  var r;
-  if (selPoly) {                          // la boucle tracée reste affichée : on attrape dedans
-    r = document.createElementNS(SVGNS, 'path');
-    r.setAttribute('d', CF.figStrokePath({ t: 'f', p: [].concat.apply([], selPoly) }) + 'Z');
-  } else {
-    r = document.createElementNS(SVGNS, 'rect');
-    r.setAttribute('x', (b[0] - 3).toFixed(1)); r.setAttribute('y', (b[1] - 3).toFixed(1));
-    r.setAttribute('width', (b[2] - b[0] + 6).toFixed(1)); r.setAttribute('height', (b[3] - b[1] + 6).toFixed(1));
-    r.setAttribute('rx', '4');
-  }
+  var r = document.createElementNS(SVGNS, 'rect');
   r.setAttribute('class', 'fg-selbox');
+  r.setAttribute('x', (b[0] - 3).toFixed(1)); r.setAttribute('y', (b[1] - 3).toFixed(1));
+  r.setAttribute('width', (b[2] - b[0] + 6).toFixed(1)); r.setAttribute('height', (b[3] - b[1] + 6).toFixed(1));
+  r.setAttribute('rx', '4');
   sv.insertBefore(r, sv.querySelector('.fg-live'));
 }
-/* pointe de flèche couleur sélection (grande : tracés, petite : flèche de vecteur sur un nom) */
-function selMarker(sv, small) {
-  var id = small ? 'fzSelV' : 'fzSel';
-  if (sv.querySelector('#' + id)) return id;
-  var defs = sv.querySelector('defs') || sv.insertBefore(document.createElementNS(SVGNS, 'defs'), sv.firstChild);
-  var m = document.createElementNS(SVGNS, 'marker'), p = document.createElementNS(SVGNS, 'path');
-  m.setAttribute('id', id); m.setAttribute('viewBox', '0 0 8 8'); m.setAttribute('orient', 'auto');
-  m.setAttribute('refX', small ? '7' : '6.6'); m.setAttribute('refY', '4');
-  m.setAttribute('markerWidth', small ? '4' : '6'); m.setAttribute('markerHeight', small ? '4' : '6');
-  p.setAttribute('d', small ? 'M0 1 L8 4 L0 7 z' : 'M0 .6 L8 4 L0 7.4 z');
-  p.setAttribute('style', 'fill: var(--accent)');
-  m.appendChild(p); defs.appendChild(m);
-  return id;
-}
-/* pendant le glissé : on bouge le dessin à l'écran, la note n'est écrite qu'au lâcher */
+/* pendant le glissé : on bouge les noms à l'écran, la note n'est écrite qu'au lâcher */
 function shiftSelection(sv, dx, dy) {
   var t = dx || dy ? 'translate(' + dx.toFixed(1) + ' ' + dy.toFixed(1) + ')' : '';
-  selNodes(sv).concat([sv.querySelector('.fg-selbox')]).forEach(function (n) {
-    if (!n) return;
-    if (t) n.setAttribute('transform', t); else n.removeAttribute('transform');
+  sel.forEach(function (id) {
+    var g = sv.querySelector('[data-lb="' + id + '"]');
+    if (g) { if (t) g.setAttribute('transform', t); else g.removeAttribute('transform'); }
   });
+  var r = sv.querySelector('.fg-selbox');
+  if (r) { if (t) r.setAttribute('transform', t); else r.removeAttribute('transform'); }
 }
 
 A.figInit = function () {
   var lines = $('lines');
-  zoom.el = $('figZoom'); zoom.stage = $('fzStage'); zoom.back = $('fzBack');
-  [lines, zoom.el].forEach(function (host) {
-    host.addEventListener('pointerdown', onDown);
-    host.addEventListener('pointermove', onMove);
-    host.addEventListener('pointerup', onUp);
-    host.addEventListener('pointercancel', onUp);
-  });
+  lines.addEventListener('pointerdown', onDown);
+  lines.addEventListener('pointermove', onMove);
+  lines.addEventListener('pointerup', onUp);
+  lines.addEventListener('pointercancel', onUp);
   lines.addEventListener('pointerleave', function (e) { if (drawing || drag) onUp(e); });
-  // un toucher à côté du repère : on rappelle comment le ranger (rien d'autre ne se passe)
-  zoom.el.addEventListener('pointerdown', function (e) { zoom.downBack = e.target === zoom.back; }, true);
-  zoom.back.addEventListener('click', function () {
-    if (zoom.downBack && zoom.open) A.toast('Touche « Terminé » pour remettre le repère dans la note');
-  });
-  window.addEventListener('resize', zoomLayout);
-  if (window.visualViewport) {
-    window.visualViewport.addEventListener('resize', zoomLayout);
-    window.visualViewport.addEventListener('scroll', zoomLayout);
-  }
-  if (window.ResizeObserver) new ResizeObserver(function () { zoomLayout(); }).observe($('editor'));
-  document.addEventListener('keydown', function (e) {
-    if (e.key === 'Escape' && figIndex() >= 0 && !e.defaultPrevented) { e.preventDefault(); $('edDone').click(); }
-  });
 
   [].forEach.call(document.querySelectorAll('#figPick button'), function (b) {
     b.addEventListener('click', function () { A.figInsert(b.dataset.k); });
@@ -5089,7 +4777,7 @@ A.figInit = function () {
     b.addEventListener('pointerdown', function (e) { e.preventDefault(); });
     b.addEventListener('click', fn);
   }
-  function setPen(p) { pen = pen === p ? null : p; if (pen !== 'l') { sel = []; selPoly = null; } paintBar(); }
+  function setPen(p) { pen = pen === p ? null : p; if (pen !== 'l') sel = []; paintBar(); }
   tool('penG', function () { setPen('g'); });
   tool('penF', function () { setPen('f'); });
   tool('penT', function () {
@@ -5098,22 +4786,10 @@ A.figInit = function () {
   });
   tool('penL', function () {
     setPen('l');
-    if (pen === 'l') A.toast('Entoure un tracé ou un nom avec le doigt, puis fais-le glisser');
+    if (pen === 'l') A.toast('Entoure les noms à déplacer avec le doigt, puis fais-les glisser');
   });
   tool('figArrow', function () { arrow = !arrow; paintBar(); });
   tool('figDash', function () { dash = !dash; paintBar(); });
-  // encres : les couleurs du texte
-  var cols = $('figCols');
-  CF.COLOR_NAMES.forEach(function (name) {
-    var b = document.createElement('button'), dot = document.createElement('span');
-    b.type = 'button'; b.className = 'k col'; b.dataset.c = CF.COLORS[name];
-    b.title = 'Encre ' + name; b.setAttribute('aria-label', 'Encre ' + name); b.setAttribute('aria-pressed', 'false');
-    dot.className = 'dot'; dot.style.background = CF.COLORS[name];
-    b.appendChild(dot);
-    b.addEventListener('pointerdown', function (e) { e.preventDefault(); });
-    b.addEventListener('click', function () { color = b.dataset.c; paintBar(); });
-    cols.appendChild(b);
-  });
   $('figLab').addEventListener('input', function () {
     var d = data();
     if (!d || !d.d.length) return;
@@ -5124,7 +4800,6 @@ A.figInit = function () {
   tool('figUndo', function () {
     var i = figIndex();
     if (i < 0) return;
-    sel = []; selPoly = null;
     // on ne revient en arrière que sur ce repère-ci, tel que les outils l'ont laissé
     if (histLine === i && histNote === S.cur && hist.length && S.lines[i] === lastWrite) { writeLine(hist.pop()); paintBar(); return; }
     resetHistory();
@@ -5136,7 +4811,7 @@ A.figInit = function () {
     var d = data();
     if (!d) return;
     snapshot();
-    d.d = []; delete d.al; sel = []; selPoly = null;
+    d.d = []; delete d.al; sel = [];
     write(d); paintBar();
   });
   tool('figDel', function () {
@@ -5144,9 +4819,8 @@ A.figInit = function () {
     if (i < 0) return;
     S.lines.splice(i, 1);
     if (!S.lines.length) S.lines = [''];
-    S.edit = -1;                // la ligne n'existe plus : rien à réécrire en partant (sinon elle écraserait la suivante)
     A.touch();
-    pen = null; sel = []; selPoly = null; resetHistory();
+    pen = null; sel = []; resetHistory();
     A.startEdit(Math.max(0, i - 1));
     A.toast('Repère supprimé');
   });
@@ -6025,25 +5699,7 @@ function cost(model, usage) {
   return ((usage.input_tokens || 0) * p[0] + (usage.output_tokens || 0) * p[1]) / 1e6;
 }
 function money(x) { return x < 0.01 ? 'moins d’un centime' : '≈ ' + x.toFixed(2).replace('.', ',') + ' $'; }
-/* « TD 2 », « DS 1 », « TP 3 »… dans les textes de Claude : des noms de documents, pas des formules */
-var DOCREF = /\b(?:TD|TP|DS|DSI|DST|CC|CM)\.? ?\d+[a-z]?\b/g;
-function inl1(t) {
-  var core = t.trim();
-  if (!core) return t ? ' ' : '';
-  var html;
-  try { html = CF.inlineHTML(core); } catch (e) { html = esc(core); }
-  return (/^\s/.test(t) ? ' ' : '') + html + (/\s$/.test(t) ? ' ' : '');
-}
-function inl(s) {
-  s = String(s == null ? '' : s);
-  var out = '', last = 0, m;
-  DOCREF.lastIndex = 0;
-  while ((m = DOCREF.exec(s))) {
-    out += inl1(s.slice(last, m.index)) + esc(m[0]);
-    last = m.index + m[0].length;
-  }
-  return last ? out + inl1(s.slice(last)) : inl1(s);
-}
+function inl(s) { try { return CF.inlineHTML(String(s || '')); } catch (e) { return esc(s); } }
 function block(s) {
   var lines = String(s || '').split('\n').filter(function (l) { return l.trim(); });
   try { return CF.renderLines(lines, 0).replace(/ data-(start|end|line)="\d+"/g, ''); } catch (e) { return esc(s); }
@@ -6065,7 +5721,6 @@ var EXTRACT_SCHEMA = obj({
 });
 var PACK_SCHEMA = obj({
   resume: STR,
-  consignes: STR,
   style_prof: obj({ questions_de_cours: { type: 'string', enum: ['souvent', 'parfois', 'rarement', 'jamais', 'inconnu'] }, types_de_notions: STRS, remarques: STR }),
   notions: { type: 'array', items: obj({ notion: STR, frequence: { type: 'integer' }, importance: { type: 'string', enum: ['haute', 'moyenne', 'basse'] }, formules: STRS, pourquoi: STR }) },
   questions_recurrentes: { type: 'array', items: obj({ enonce: STR, fois: { type: 'integer' }, annees: STRS, type: STR }) },
@@ -6087,22 +5742,12 @@ var EXTRACT_SYSTEM = [
   'Les formules, les unités et les démonstrations comptent ; ignore les anecdotes historiques et les consignes administratives.'
 ].join('\n');
 
-/* les consignes écrites par l'étudiant : elles passent avant les statistiques des annales */
-var INSTR_RULES = [
-  '0. L’étudiant t’a écrit des consignes (entre les balises <consignes_de_l_etudiant>) : ce que le professeur a dit (exercices ou questions cités, chapitres annoncés, indices, même vagues), ce qui ne sera pas évalué ou a peu de chances de tomber (par exemple ce qui est déjà tombé à un devoir intermédiaire et ne sera pas réévalué à l’examen final), toute autre précision. Elles priment sur les statistiques des annales :',
-  '- ce que le professeur a cité ou laissé entendre passe en tête des prévisions (confiance « forte » s’il l’a annoncé clairement, même avec peu d’annales) et le QCM le couvre largement (pour un exercice cité : sa méthode, ses étapes clés, ses formules et son résultat) ;',
-  '- ce qui est annoncé comme exclu ou peu probable sort des prévisions (ou y reste en confiance « faible » s’il subsiste un doute, en le disant) et ne prend presque plus de place dans le QCM, sauf les bases qui servent ailleurs ;',
-  '- quand une consigne parle d’un document (DSI, TD 2, annale 2023…), retrouve-le parmi les fiches grâce à son nom de fichier, son titre ou son année, et applique-la à son contenu ;',
-  '- dans « consignes », dis en une à trois phrases ce que tu en as fait, ou ce que tu n’as pas pu appliquer (par exemple un document cité qui n’est pas parmi les fiches).'
-].join('\n');
-
-function packSystem(subject, n, withInstr) {
+function packSystem(subject, n) {
   return [
     'Tu prépares un étudiant de L2 physique-chimie à son examen de « ' + subject + ' ». Tu disposes des fiches tirées de ses annales, de ses TD et de son cours, et d’extraits de ses notes.',
-    withInstr ? INSTR_RULES : 'consignes : l’étudiant n’a pas écrit de consignes, laisse une chaîne vide.',
     '1. Analyse ce qui tombe : pour chaque notion, compte dans combien d’annales elle apparaît (frequence). Repère les questions posées plusieurs fois, même reformulées (questions_recurrentes, avec les années). Décris le style du professeur : pose-t-il des questions de cours, et si oui sur quel TYPE de notions (définitions, énoncés de lois, démonstrations, ordres de grandeur…) ; quelle part de calcul, d’applications numériques, de démonstrations.',
-    '2. Prévois ce qui a de bonnes chances de tomber, avec une confiance honnête (forte, moyenne, faible) et une justification qui cite les annales' + (withInstr ? ' ou les consignes' : '') + '. Avec moins de 3 annales, aucune prévision ne peut être « forte »' + (withInstr ? ', sauf annonce claire du professeur rapportée dans les consignes' : '') + '. Dis-le dans le résumé.',
-    '3. Écris un QCM de ' + n + ' questions qui couvre les notions nécessaires le jour de l’examen, les plus probables d’abord' + (withInstr ? ' (en suivant les consignes)' : '') + ' : définitions et formules exactes (avec unités), conditions d’application, pièges classiques, étapes de démonstration, ordres de grandeur, petites applications numériques. Reprends telles quelles les questions récurrentes quand elles s’y prêtent. Exactement 4 choix, une seule bonne réponse (bonne = son rang, de 0 à 3), des distracteurs plausibles (erreur de signe, facteur 2, unité fausse, condition oubliée). Ne fais jamais référence à une lettre (A, B…) dans le texte : l’ordre des choix sera mélangé. L’explication justifie la bonne réponse en une à trois lignes. source : l’annale (avec l’année) ou la note d’où vient la question.',
+    '2. Prévois ce qui a de bonnes chances de tomber, avec une confiance honnête (forte, moyenne, faible) et une justification qui cite les annales. Avec moins de 3 annales, aucune prévision ne peut être « forte ». Dis-le dans le résumé.',
+    '3. Écris un QCM de ' + n + ' questions qui couvre les notions nécessaires le jour de l’examen, les plus probables d’abord : définitions et formules exactes (avec unités), conditions d’application, pièges classiques, étapes de démonstration, ordres de grandeur, petites applications numériques. Reprends telles quelles les questions récurrentes quand elles s’y prêtent. Exactement 4 choix, une seule bonne réponse (bonne = son rang, de 0 à 3), des distracteurs plausibles (erreur de signe, facteur 2, unité fausse, condition oubliée). Ne fais jamais référence à une lettre (A, B…) dans le texte : l’ordre des choix sera mélangé. L’explication justifie la bonne réponse en une à trois lignes. source : l’annale (avec l’année) ou la note d’où vient la question.',
     SYNTAX,
     'Pas d’histoire des sciences. Écris en français.'
   ].join('\n');
@@ -6224,7 +5869,7 @@ function addFiles(fid, list) {
 function compactExt(f) {
   var e = f.ext || {};
   return {
-    fichier: f.name, titre: f.title || e.titre || '', nature: f.kind, annee: f.year || e.annee || '',
+    fichier: f.name, nature: f.kind, annee: f.year || e.annee || '',
     questions: (e.questions || []).map(function (q) { return [q.num, q.type, q.enonce, (q.notions || []).join(' ; '), (q.formules || []).join(' ; ')].join(' | '); }),
     notions_cours: (e.notions_cours || []).map(function (n) { return [n.notion, (n.formules || []).join(' ; '), (n.unites || []).join(' ; ')].join(' | '); })
   };
@@ -6255,16 +5900,14 @@ function analyse(fid) {
   var annales = read.filter(function (f) { return f.kind === 'annale'; }).length;
   var n = Math.min(30, Math.max(15, annales * 6 + 10));
   var subject = (folderById(fid) || {}).name || 'la matière';
-  var instr = String(w.instr || '').trim();
   var payload = 'Fiches des documents (une question par ligne : numéro | type | énoncé | notions | formules) :\n' +
-    JSON.stringify(read.map(compactExt)) + '\n\nNombre d’annales : ' + annales + '.\n\nExtraits des notes de l’étudiant :' + notesFor(fid, 14000) +
-    (instr ? '\n\n<consignes_de_l_etudiant>\n' + instr + '\n</consignes_de_l_etudiant>\nCes consignes passent avant les statistiques des annales.' : '');
+    JSON.stringify(read.map(compactExt)) + '\n\nNombre d’annales : ' + annales + '.\n\nExtraits des notes de l’étudiant :' + notesFor(fid, 14000);
   view.busy = 'analyse'; view.err = ''; view.progress = 0;
   paint();
   callJSON({
     // analyser et écrire le QCM : réflexion moyenne, et la place pour la réflexion + 30 questions
     model: model(), max_tokens: 32000, stream: true,
-    system: packSystem(subject, n, !!instr),
+    system: packSystem(subject, n),
     output_config: { format: { type: 'json_schema', schema: PACK_SCHEMA }, effort: 'medium' },
     messages: [{ role: 'user', content: payload }]
   }, function (txt) {
@@ -6273,7 +5916,6 @@ function analyse(fid) {
   }).then(function (res) {
     var p = res.json;
     p.generated = A.now(); p.model = res.model; p.files = read.length; p.annales = annales;
-    p.instr = instr;                                  // les consignes de cette analyse (pour voir si elles ont changé depuis)
     var stamp = p.generated.toString(36);
     // identifiants propres à cette analyse : les réponses à une ancienne analyse ne s'y mélangent jamais
     p.qcm = (Array.isArray(p.qcm) ? p.qcm : []).filter(function (q) {
@@ -6415,23 +6057,6 @@ function filesHTML(fid, w) {
   return h + '</section>';
 }
 
-var INSTR_MAX = 6000;
-/* les consignes ont-elles changé depuis l'analyse affichée ? */
-function instrNote(w) {
-  var p = w.pack, now = String(w.instr || '').trim();
-  if (!p || now === String(p.instr || '')) return '';
-  return now ? 'Tes consignes ont changé depuis cette analyse : refais-la pour en tenir compte.'
-    : 'Cette analyse suivait des consignes que tu as effacées : refais-la si tu veux t’en passer.';
-}
-function instrHTML(fid, w) {
-  return '<section class="tr-sec tr-instr"><h2><label for="trInstr">Tes consignes</label></h2>' +
-    '<p class="tr-hint" id="trInstrHint">Ce que le prof a annoncé, les exercices qu’il a cités, ce qui ne retombera pas… L’analyse et le QCM en tiennent compte avant tout le reste.</p>' +
-    '<textarea id="trInstr" rows="5" maxlength="' + INSTR_MAX + '" spellcheck="true" aria-describedby="trInstrHint" placeholder="' +
-    esc('Ex. : le prof a cité l’exercice 3 du TD 2 et la démonstration du théorème de Gauss. Ce qui est tombé au DSI (le PDF « DSI 2025 ») ne sera pas réévalué au DST.') + '">' +
-    esc(w.instr || '') + '</textarea>' +
-    '<p class="tr-cost">Enregistré tout seul, sur tes deux appareils.</p></section>';
-}
-
 function packHTML(fid, w) {
   var p = w.pack, read = w.files.filter(function (f) { return f.status === 'lu'; }).length;
   var annales = w.files.filter(function (f) { return f.kind === 'annale' && f.status === 'lu'; }).length;
@@ -6443,14 +6068,11 @@ function packHTML(fid, w) {
     var label = p ? 'Refaire l’analyse et le QCM' : 'Analyser et préparer le QCM';
     h += '<div class="tr-row"><button type="button" class="tr-btn strong" id="trAnalyse"' + (read && ready && !view.busy ? '' : ' disabled') + '>' + label + '</button>' +
       (read && annales < 3 ? '<span class="tr-warn">Avec moins de 3 annales, les prévisions restent fragiles.</span>' : '') + '</div>';
-    if (p) { var nt = instrNote(w); h += '<p class="tr-note" id="trNote"' + (nt ? '' : ' hidden') + '>' + esc(nt) + '</p>'; }
     if (view.err) h += '<p class="tr-err">' + esc(view.err) + '</p>';
   }
   if (!p) return h + (read ? '' : '<p class="tr-hint">L’analyse se lance une fois tes documents lus.</p>') + '</section>';
 
   h += '<p class="tr-resume">' + inl(p.resume) + '</p>';
-  // en texte simple : c'est de la prose sur tes documents (« TD 2 » ne doit pas devenir une formule)
-  if (p.consignes && String(p.instr || '').trim()) h += '<div class="tr-applied"><h3>Tes consignes, appliquées</h3><p>' + esc(p.consignes) + '</p></div>';
   var sp = p.style_prof || {};
   h += '<div class="tr-style"><h3>Le style du prof</h3><p>Questions de cours : <b>' + esc(COURS[sp.questions_de_cours] || sp.questions_de_cours || '?') + '</b>' +
     (sp.types_de_notions && sp.types_de_notions.length ? ', surtout ' + esc(sp.types_de_notions.join(', ')) : '') + '.</p>' +
@@ -6531,38 +6153,15 @@ function paint() {
   var fid = pickFolder();
   if (!fid) { el.innerHTML = '<p class="tr-hint">Crée d’abord un dossier de matière dans Notes.</p>'; return; }
   var w = ws(fid);
-  if (view.session && view.session.fid === fid) { el.innerHTML = sessionHTML(); el.dataset.fid = ''; return; }
+  if (view.session && view.session.fid === fid) { el.innerHTML = sessionHTML(); return; }
   view.session = null;
   var chips = '<nav class="tr-subjects" aria-label="Matière">' + folders().map(function (f) {
     var t = S.train && S.train[f.id], q = t && t.pack && t.pack.qcm ? t.pack.qcm.length : 0;
     return '<button type="button" class="tr-subj' + (f.id === fid ? ' on' : '') + '" data-subj="' + f.id + '" aria-pressed="' + (f.id === fid) + '">' +
       esc(f.name) + (q ? ' <small>' + q + '</small>' : '') + '</button>';
   }).join('') + '</nav>';
-  var html = chips + '<div class="tr-cols"><div class="tr-left">' + filesHTML(fid, w) + instrHTML(fid, w) + qcmHTML(fid, w) + '</div>' +
+  el.innerHTML = chips + '<div class="tr-cols"><div class="tr-left">' + filesHTML(fid, w) + qcmHTML(fid, w) + '</div>' +
     '<div class="tr-right">' + packHTML(fid, w) + '</div></div>';
-  // redessiné pendant qu'on écrit ses consignes (synchro, lecture finie…) : le champ reste tel quel,
-  // sous les doigts (le recréer ferait tomber le clavier de l'iPad)
-  var ae = document.activeElement;
-  if (!(ae && ae.id === 'trInstr' && el.contains(ae) && el.dataset.fid === fid && swapAround(el, html))) el.innerHTML = html;
-  el.dataset.fid = fid;
-}
-/* remplace tout sauf la section des consignes (gardée à sa place) */
-function swapAround(el, html) {
-  var tmp = document.createElement('div');
-  tmp.innerHTML = html;
-  var keep = el.querySelector('.tr-instr'), fresh = tmp.querySelector('.tr-instr');
-  var oldNav = el.querySelector('.tr-subjects'), newNav = tmp.querySelector('.tr-subjects');
-  var oldRight = el.querySelector('.tr-right'), newRight = tmp.querySelector('.tr-right');
-  if (!keep || !fresh || !oldNav || !newNav || !oldRight || !newRight) return false;
-  var col = keep.parentNode, before = true;
-  [].slice.call(col.children).forEach(function (c) { if (c !== keep) col.removeChild(c); });
-  [].slice.call(fresh.parentNode.children).forEach(function (c) {
-    if (c === fresh) { before = false; return; }
-    if (before) col.insertBefore(c, keep); else col.appendChild(c);
-  });
-  oldNav.parentNode.replaceChild(newNav, oldNav);
-  oldRight.parentNode.replaceChild(newRight, oldRight);
-  return true;
 }
 A.trainPage = function () { paint(); };
 
@@ -6591,24 +6190,6 @@ A.trainInit = function () {
       var inp = $('trFiles'); if (inp && !inp.disabled) inp.click();
     }
   });
-  var instrTimer = 0, instrFid = null;
-  function saveInstr() {
-    clearTimeout(instrTimer); instrTimer = 0;
-    if (instrFid) { A.saveTrain(instrFid); instrFid = null; }
-  }
-  body.addEventListener('input', function (e) {
-    if (e.target.id !== 'trInstr' || !view.fid) return;
-    var w = ws(view.fid), v = e.target.value.slice(0, INSTR_MAX);
-    if (v === w.instr) return;
-    if (instrFid && instrFid !== view.fid) saveInstr();
-    w.instr = v; w.instrT = A.now(); instrFid = view.fid;
-    clearTimeout(instrTimer); instrTimer = setTimeout(saveInstr, 900);
-    var note = $('trNote');                     // mis à jour sur place : pas de rendu complet pendant la saisie
-    if (note) { var nt = instrNote(w); note.textContent = nt; note.hidden = !nt; }
-  });
-  body.addEventListener('focusout', function (e) { if (e.target.id === 'trInstr') saveInstr(); });
-  window.addEventListener('pagehide', saveInstr);
-  document.addEventListener('visibilitychange', function () { if (document.hidden) saveInstr(); });
   body.addEventListener('change', function (e) {
     if (e.target.id === 'trFiles') { var files = e.target.files; if (files && files.length) addFiles(view.fid, files); e.target.value = ''; return; }
     if (e.target.classList.contains('fk')) {
@@ -6930,8 +6511,8 @@ function buildHelp() {
     sec[2].forEach(function (src) { h += exHTML(src); });
     h += '</div>';
   });
-  h += '<h3>Repères et schémas</h3><p>Touche <b>Repère</b> dans la barre, choisis <b>Circulaire (3D)</b>, <b>Polaire (ρ, z)</b> ou <b>Cartésien (x, y)</b>. Ensuite, avec le doigt : <b>✐ Guidé</b> redresse les traits et arrondit les arcs (angles), <b>✎ Libre</b> dessine tel quel, <b>T Nom</b> pose un nom là où tu touches (M, K, vec(e_r)…), <b>◌ Lasso</b> déplace tes tracés et leurs noms (jamais les axes) : entoure-les avec le doigt, ou touche-en un, puis fais glisser ; un nom suit son tracé. Un nom d’axe (x, y, O…) se déplace s’il est seul dans la boucle. Les boutons <b>→</b> et <b>┄</b> mettent une flèche au bout ou des pointillés, et les pastilles de couleur de la barre du repère choisissent l’encre. Le champ de légende écrit le long du dernier trait : <code>theta</code>, <code>delta t</code>, <code>vec(e_theta)</code>. Pendant que tu le modifies, le repère s’affiche en grand au milieu de l’écran ; <b>Terminé</b> le remet à sa place dans la note.</p>';
-  h += '<h3>IA et entraînement</h3><p>Le bouton <b>IA</b> de la barre répond à tes questions sur le cours en s’appuyant sur la note ouverte et sur tes autres notes ; ses réponses s’écrivent comme tes notes et s’insèrent sous ta ligne. L’espace <b>Entraînement</b> de l’accueil lit tes annales, tes TD et ton cours en PDF, dit ce qui tombe et prépare un QCM qui marche ensuite sans réseau. Dans <b>Tes consignes</b>, écris ce que le prof a annoncé (exercices cités, ce qui ne retombera pas…) : l’analyse en tient compte avant tout le reste. Pour brancher l’IA une fois pour toutes, suis le fichier <b>LISEZMOI-IA.txt</b>.</p>';
+  h += '<h3>Repères et schémas</h3><p>Touche <b>Repère</b> dans la barre, choisis <b>Circulaire (3D)</b>, <b>Polaire (ρ, z)</b> ou <b>Cartésien (x, y)</b>. Ensuite, avec le doigt : <b>✐ Guidé</b> redresse les traits et arrondit les arcs (angles), <b>✎ Libre</b> dessine tel quel, <b>T Nom</b> pose un nom là où tu touches (M, K, vec(e_r)…), <b>◌ Lasso</b> déplace les noms : entoure-les avec le doigt, puis fais-les glisser. Les boutons <b>→</b> et <b>┄</b> mettent une flèche au bout ou des pointillés, et la pastille de couleur choisit l’encre. Le champ de légende écrit le long du dernier trait : <code>theta</code>, <code>delta t</code>, <code>vec(e_theta)</code>.</p>';
+  h += '<h3>IA et entraînement</h3><p>Le bouton <b>IA</b> de la barre répond à tes questions sur le cours en s’appuyant sur la note ouverte et sur tes autres notes ; ses réponses s’écrivent comme tes notes et s’insèrent sous ta ligne. L’espace <b>Entraînement</b> de l’accueil lit tes annales, tes TD et ton cours en PDF, dit ce qui tombe et prépare un QCM qui marche ensuite sans réseau. Pour brancher l’IA une fois pour toutes, suis le fichier <b>LISEZMOI-IA.txt</b>.</p>';
   h += '<h3>Travail à faire</h3><p>Le bouton <b>Agenda</b> ouvre les semaines à venir : touche un jour, écris le travail, il se range avec la note en cours. Au week-end qui précède, un rappel s’affiche à l’ouverture de l’appli et un chiffre rouge apparaît sur l’icône ; il disparaît quand tu coches « fait ».</p>';
   h += '<h3>Mes raccourcis</h3><p>Ajoute tes propres abréviations : elles sont remplacées à l’affichage. Par exemple <code>w</code> → <code>omega</code>, ou <code>cste</code> → <code>constante</code>.</p><div class="custom" id="custom"></div>';
   body.innerHTML = h;
@@ -7007,7 +6588,7 @@ function schemaCSS() {
   var app = $('app-css');
   try {
     [].forEach.call((app && app.sheet && app.sheet.cssRules) || [], function (r) {
-      if (r.selectorText && /\.qc|\.lg|svg\.fig|\.fg-|\.ln\.figln/.test(r.selectorText) && !/drawing|lasso|selbox|fg-on|fg-live|fz-/.test(r.selectorText)) out += '\n' + r.cssText;
+      if (r.selectorText && /\.qc|\.lg|svg\.fig|\.fg-|\.ln\.figln/.test(r.selectorText) && !/drawing|lasso|selbox|fg-on|fg-live/.test(r.selectorText)) out += '\n' + r.cssText;
     });
   } catch (e) { /* feuille illisible : les formules restent */ }
   return out;
